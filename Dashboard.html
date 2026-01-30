@@ -94,20 +94,23 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 2000; /* Increased z-index to stay above everything */
+  z-index: 2000;
   background: var(--bg);
   padding: 0 20px 5px 20px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .top-msg {
   text-align: center;
   margin: 0 -20px 0 -20px;
-  font-size: clamp(12px, 2vw, 16px);
-  font-weight: 600;
+  font-size: clamp(14px, 3vw, 32px); /* Increased for better visibility */
+  font-weight: 800;
   background: var(--primary);
   color: #fff;
-  padding: 8px;
+  padding: 10px;
   border-radius: 0 0 14px 14px;
   width: calc(100% + 40px);
 }
@@ -119,13 +122,105 @@ h2 {
   width: 100%;
   letter-spacing: .3px;
   color: var(--text);
-  font-size: clamp(16px, 3vw, 24px);
+  font-size: clamp(18px, 4vw, 28px); /* Adjusted for responsiveness */
   font-weight: 800;
   background: var(--surface);
   padding: 10px;
   border-radius: 12px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.font-controls {
+  display: flex;
+  gap: 5px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.font-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.font-controls button:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+#fontNormal {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+#themeToggle {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primaryHover);
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  body { padding-top: 240px !important; }
+  .header-controls {
+    position: static !important;
+    transform: none !important;
+    justify-content: center;
+    width: 100%;
+    order: 3;
+    margin-top: 5px;
+  }
+  h2 { order: 2; margin-bottom: 5px; }
+  .data-update-msg { order: 1; }
+}
+
+.hidden { display: none !important; }
+
+.data-update-msg { order: 1; }
 }
 
 .data-update-msg {
@@ -793,24 +888,24 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 </div>
 <div class="sticky-header">
   <div class="top-msg">IVRS बुकिंग - 8888823456 | <strong>मिस्ड कॉल बुकिंग - 9493602222</strong> | WhatsApp बुकिंग - 9222201122</div>
-  <div id="dataUpdateMsg" class="data-update-msg" style="display:none">
+  <div id="dataUpdateMsg" class="data-update-msg hidden">
     डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
-    <span id="idleTimer" style="margin-left:15px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none;"></span>
+    <span id="idleTimer" class="hidden" style="margin-left:15px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa;"></span>
   </div>
   <h2>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</h2>
-  <div class="header-controls" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); display: flex; align-items: center; gap: 12px;">
-    <div class="font-controls" style="display: flex; gap: 5px; background: var(--surface); padding: 4px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-      <button id="fontSmall" title="Small Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:11px; cursor:pointer;">A-</button>
-      <button id="fontNormal" title="Normal Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:13px; cursor:pointer;">A</button>
-      <button id="fontBig" title="Big Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:15px; cursor:pointer;">A+</button>
+  <div class="header-controls">
+    <div class="font-controls">
+      <button id="fontSmall" title="Small Font">A-</button>
+      <button id="fontNormal" title="Normal Font">A</button>
+      <button id="fontBig" title="Big Font">A+</button>
     </div>
-    <button id="themeToggle" style="background:transparent; border:none; font-size:20px; cursor:pointer; padding:0; display:flex; align-items:center;" title="Toggle Dark Mode">🌙</button>
-    <button id="reUploadBtn" style="display:none; background:var(--primary); color:#fff; border:none; padding:6px 15px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:var(--shadow); transition:transform 0.2s;" onclick="reUpload()">🔄 Re-Upload</button>
+    <button id="themeToggle" title="Toggle Dark Mode">🌙</button>
+    <button id="reUploadBtn" class="btn-primary hidden" onclick="reUpload()">🔄 Re-Upload</button>
   </div>
 </div>
 
 <div class="file-upload drop-zone" id="dropZone">
-  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="hidden">
   <div style="font-weight:bold;margin-bottom:10px;font-size:18px">फ़ाइल यहाँ ड्राप करें या क्लिक करके अपलोड करें</div>
   <div class="file-help">फ़ाइल अपलोड करने के लिए: कृपया अपनी CSV फ़ाइल <strong>cDCMS</strong> से डाउनलोड करें। <br> <strong>रास्ता</strong> - <strong>cDCMS</strong> - ConsumerManagement/ConsumerDetails/SearchConsumer -<strong>Search</strong> पर क्लिक करें फिर <strong>Export to Excel</strong> पर क्लिक करें।</div>
   <div style="margin-top:15px; font-size:12px; color:var(--muted);">
@@ -822,7 +917,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   <button id="toggleCardsBtn">कार्ड छुपाएं / दिखाएं</button>
 </div>
 
-<div id="summaryCards" class="summary-grid" style="display:none">
+<div id="summaryCards" class="summary-grid hidden">
   <div class="summary-card" draggable="true" data-id="sumTotal">
     <span class="close-btn" onclick="hideCard(this)">✕</span>
     <div class="lbl">कुल उपभोक्ता</div>
@@ -1048,9 +1143,9 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
  <div class="report-content" id="trendAnalysisReport"></div>
  <div class="toparea-grid report-content" id="topAreas"></div>
 </div>
-<div class="active-report-container" id="aboutContainer" style="display:none">
- <div class="report-header">डैशबोर्ड के बारे में (System Summary)</div>
- <div class="about-content">
+<div class="active-report-container hidden" id="aboutContainer">
+  <div class="report-header">डैशबोर्ड के बारे में</div>
+  <div class="about-content">
   <p class="about-p">यह एक <strong>"Privacy-First"</strong> और <strong>"Action-Oriented"</strong> MIS डैशबोर्ड है, जिसे विशेष रूप से HPCL LPG वितरकों के लिए e-KYC की निगरानी और परिचालन दक्षता (Operational Efficiency) बढ़ाने के लिए डिज़ाइन किया गया है। यह cDCMS के रॉ डेटा को विज़ुअल इंटेलिजेंस में बदलकर वितरकों को त्वरित निर्णय लेने में मदद करता है।</p>
   
   <div class="about-grid">
@@ -1106,7 +1201,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   <p class="about-footer">🎯 हमारा लक्ष्य: डेटा की जटिलता को कम करना और वितरकों को डिजिटल रूप से सशक्त बनाकर "Digital India" की दिशा में एक कदम आगे बढ़ाना।</p>
  </div>
 </div>
-<div class="active-report-container" id="requestContainer" style="display:none">
+<div class="active-report-container hidden" id="requestContainer">
  <div class="report-header">उपभोक्ता के अनुरोध पर</div>
  <div class="filters">
   <input type="text" id="requestMobile" placeholder="दूरभाष संख्या">
@@ -1119,7 +1214,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
  </div>
 </div>
 
-<div id="consumerDataContainer" style="display:none">
+<div id="consumerDataContainer" class="hidden">
 <div class="filters">
  <select id="ekycFilter"><option value="">All eKYC</option></select>
  <select id="areaFilter"><option value="">All Areas</option></select>
@@ -1167,10 +1262,54 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function openTab(id,btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='block';el('consumerDataContainer').style.display='block';const c=el(id);c.style.display=c.classList.contains('toparea-grid')?'flex':'block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const t=reportTitles[id]||'';const rh=el('reportHeader');if(rh)rh.textContent=t}
-function showConsumerData(btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const rh=el('reportHeader');if(rh)rh.textContent='';if(filteredData.length===0||filteredData.length===data.length){applyAll();}}
-function toggleReports(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display=(sm.style.display==='none'||sm.style.display==='')?'block':'none'}
-function showRequest(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display='none';el('requestContainer').style.display='block'}
+function openTab(id,btn){
+  document.querySelectorAll('.report-content').forEach(d=>d.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const ac=el('aboutContainer'); if(ac) ac.classList.add('hidden');
+  el('requestContainer').classList.add('hidden');
+  el('reportContainer').classList.remove('hidden');
+  el('consumerDataContainer').classList.remove('hidden');
+  const c=el(id); 
+  if(c) {
+    c.classList.remove('hidden');
+    c.style.display = c.classList.contains('toparea-grid') ? 'flex' : 'block';
+  }
+  btn.classList.add('active');
+  const sm=el('reportsSubmenu'); if(sm) sm.classList.add('hidden');
+  const t=reportTitles[id]||'';
+  const rh=el('reportHeader'); if(rh) rh.textContent=t;
+}
+function showConsumerData(btn){
+  document.querySelectorAll('.report-content').forEach(d=>d.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  const ac=el('aboutContainer'); if(ac) ac.classList.add('hidden');
+  el('requestContainer').classList.add('hidden');
+  el('reportContainer').classList.add('hidden');
+  el('consumerDataContainer').classList.remove('hidden');
+  btn.classList.add('active');
+  const sm=el('reportsSubmenu'); if(sm) sm.classList.add('hidden');
+  const rh=el('reportHeader'); if(rh) rh.textContent='';
+  if(filteredData.length===0||filteredData.length===data.length){applyAll();}
+}
+function toggleReports(btn){
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const ac=el('aboutContainer'); if(ac) ac.classList.add('hidden');
+  el('requestContainer').classList.add('hidden');
+  el('reportContainer').classList.add('hidden');
+  el('consumerDataContainer').classList.add('hidden');
+  const sm=el('reportsSubmenu'); 
+  if(sm) sm.classList.toggle('hidden');
+}
+function showRequest(btn){
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const ac=el('aboutContainer'); if(ac) ac.classList.add('hidden');
+  el('reportContainer').classList.add('hidden');
+  el('consumerDataContainer').classList.add('hidden');
+  const sm=el('reportsSubmenu'); if(sm) sm.classList.add('hidden');
+  el('requestContainer').classList.remove('hidden');
+}
 function showAbout(btn){
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   if(btn){
@@ -1179,15 +1318,22 @@ function showAbout(btn){
     const aboutBtn = Array.from(document.querySelectorAll('.nav-item')).find(b => b.textContent.includes('डैशबोर्ड के बारे में'));
     if(aboutBtn) aboutBtn.classList.add('active');
   }
-  const sm=el('reportsSubmenu');
-  if(sm)sm.style.display='none';
-  el('reportContainer').style.display='none';
-  el('consumerDataContainer').style.display='none';
-  el('requestContainer').style.display='none';
-  const ac=document.getElementById('aboutContainer');
-  if(ac)ac.style.display='block';
+  const sm=el('reportsSubmenu'); if(sm) sm.classList.add('hidden');
+  el('reportContainer').classList.add('hidden');
+  el('consumerDataContainer').classList.add('hidden');
+  el('requestContainer').classList.add('hidden');
+  const ac=el('aboutContainer');
+  if(ac) ac.classList.remove('hidden');
 }
-document.addEventListener('click',function(e){const nd=document.querySelector('.nav-dropdown');const sm=el('reportsSubmenu');if(!nd||!sm)return;const inside=nd.contains(e.target);if(sm.style.display==='block'&&!inside){sm.style.display='none'}})
+document.addEventListener('click',function(e){
+  const nd=document.querySelector('.nav-dropdown');
+  const sm=el('reportsSubmenu');
+  if(!nd||!sm) return;
+  const inside=nd.contains(e.target);
+  if(!sm.classList.contains('hidden') && !inside){
+    sm.classList.add('hidden');
+  }
+});
 const el=id=>document.getElementById(id);
 
   function reUpload(){
