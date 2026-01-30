@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LPG Consumer eKYC & MIS Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #2563eb;
+  --primaryHover: #1d4ed8;
+  --border: #e5e7eb;
+  --shadow: 0 8px 20px rgba(0,0,0,.08);
+  --success: #10b981;
+  --danger: #ef4444;
+  --wa: #25D366;
+}
+
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  margin: 20px 0;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid var(--border);
+}
+
+#loadingOverlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 20000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+.loader {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid var(--primary);
+  border-radius: 50%;
+  width: 50px; height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+body.dark-mode {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: #334155;
+  --shadow: 0 8px 20px rgba(0,0,0,.4);
+  --accent: #1e293b;
+  --card-bg: #1e293b;
+}
+
+/* Font Size Scaling */
+body.font-sm { font-size: 13px; }
+body.font-sm .nav-item { font-size: 12px; padding: 8px 16px; }
+body.font-sm th, body.font-sm td { font-size: 11px; padding: 8px; }
+body.font-sm .summary-card .lbl { font-size: 12px; }
+body.font-sm .summary-card .val { font-size: 20px; }
+body.font-sm select, body.font-sm input, body.font-sm button { font-size: 12px; }
+
+body.font-lg { font-size: 16px; }
+body.font-lg .nav-item { font-size: 16px; padding: 12px 24px; }
+body.font-lg th, body.font-lg td { font-size: 15px; padding: 12px; }
+body.font-lg .summary-card .lbl { font-size: 16px; }
+body.font-lg .summary-card .val { font-size: 28px; }
+body.font-lg select, body.font-lg input, body.font-lg button { font-size: 16px; }
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  padding: 170px 20px 20px 20px; /* Reset padding to previous value */
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Header & Messages */
+.sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2000; /* Increased z-index to stay above everything */
+  background: var(--bg);
+  padding: 0 20px 5px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.top-msg {
+  text-align: center;
+  margin: 0 -20px 0 -20px;
+  font-size: clamp(12px, 2vw, 16px);
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+  padding: 8px;
+  border-radius: 0 0 14px 14px;
+  width: calc(100% + 40px);
+}
+
+h2 {
+  display: block !important;
+  text-align: center;
+  margin: 8px 0;
+  width: 100%;
+  letter-spacing: .3px;
+  color: var(--text);
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: 800;
+  background: var(--surface);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.data-update-msg {
+  text-align: center;
+  margin: 5px 0;
+  font-size: 14px;
+  color: var(--danger);
+  font-weight: bold;
+}
+
+.flash-msg, .alert-msg {
+  display: none;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+.flash-msg { background: var(--success); }
+.alert-msg { background: var(--danger); }
+
+/* File Upload */
+.file-upload {
+  text-align: center;
+  margin: 15px 0;
+  background: var(--surface);
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  border: 2px dashed var(--primary);
+  cursor: pointer;
+  transition: background .2s;
+}
+.file-upload.over { background: rgba(37, 99, 235, .05); border-style: solid; }
+.file-help {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  background: var(--bg);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px dashed var(--primary);
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* Summary Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+.summary-card {
+  background: var(--surface);
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: transform .2s, opacity 0.2s;
+  cursor: grab;
+  position: relative;
+}
+.summary-card:active { cursor: grabbing; }
+.summary-card.dragging { opacity: 0.5; transform: scale(0.95); }
+.summary-card:hover { transform: translateY(-3px); }
+.summary-card .close-btn {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+}
+.summary-card:hover .close-btn { display: block; }
+.summary-card .val {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary);
+  margin-top: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.summary-card .lbl { font-size: 14px; color: var(--muted); font-weight: 600; }
+
+.notification-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--surface);
+  border-left: 5px solid var(--success);
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: slideIn 0.5s ease-out;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.notification-toast.congrats { border-left-color: #f1c40f; }
+.notification-toast .icon { font-size: 24px; }
+.notification-toast .msg { font-weight: 600; }
+
+/* Filters & Navbar */
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 15px 0;
+  background: var(--surface);
+  padding: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.filter-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+}
+.filter-group-title {
+  font-weight: bold;
+  color: var(--text);
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+select, input, button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  transition: all .2s;
+}
+button {
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+}
+button:hover { background: var(--primaryHover); }
+.copy-btn {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+  margin-left: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+#consumerSearch { width: clamp(260px, 40vw, 500px); }
+
+.navbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--surface);
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  margin: 20px 0;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.nav-item {
+  padding: 10px 20px;
+  background: var(--bg);
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: center;
+}
+.nav-item:hover, .nav-item.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, .35);
+}
+
+.nav-dropdown { position: relative; display: inline-block; }
+.nav-submenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  z-index: 1000;
+  min-width: 250px;
+}
+.nav-submenu .nav-item { width: 100%; border-radius: 8px; margin-bottom: 5px; font-size: 13px; text-align: left; }
+
+/* Reports */
+.active-report-container {
+  display: none;
+  background: var(--surface);
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.report-header {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+  background: var(--bg);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 18px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.report-content { display: none; }
+.report-content.active { display: block; }
+
+.report-line {
+  display: grid;
+  grid-template-columns: 240px repeat(auto-fit, minmax(80px, 1fr));
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  padding: 10px;
+  align-items: center;
+  gap: 10px;
+}
+.report-line.header { font-weight: bold; background: var(--border); border-radius: 8px 8px 0 0; }
+.report-line.total { font-weight: bold; background: var(--bg); margin-top: 5px; border-radius: 0 0 8px 8px; }
+.report-clickable { color: var(--primary); cursor: pointer; text-decoration: underline; }
+
+/* Charts */
+.chart { margin: 10px 0; }
+.chart-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 13px; }
+.chart-label { min-width: 150px; color: var(--text); }
+.chart-bar { flex: 1; height: 12px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.chart-fill { display: inline-block; height: 100%; transition: width 0.3s ease; }
+.chart-fill.completed { background: var(--success); }
+.chart-fill.pending { background: #e67e22; }
+.chart-fill.single { background: var(--primary); }
+
+/* Top Areas (Full Area) */
+.toparea-full { margin-top: 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); padding: 15px; }
+.toparea-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.toparea-card { flex: 1; min-width: 250px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-size: 13px; cursor: pointer; transition: all 0.3s ease; }
+.toparea-card:hover { border-color: var(--primary); background: var(--border); }
+
+/* Tables */
+.table-wrap {
+  background: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 15px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+table { border-collapse: collapse; width: 100%; min-width: 800px; }
+th, td { border: 1px solid var(--border); padding: 10px; font-size: 13px; text-align: left; color: var(--text); }
+th { background: var(--bg); font-weight: bold; position: sticky; top: 0; z-index: 2; }
+tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
+.consumer-link { color: var(--primary); cursor: pointer; text-decoration: underline; font-weight: bold; }
+.wa-btn {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  background: var(--wa);
+  color: #fff;
+  font-size: 12px;
+  text-decoration: none;
+  border: 1px solid #1ebe57;
+  transition: background .2s;
+}
+.wa-btn:hover { background: #1ebe57; }
+
+.table-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+  background: var(--surface);
+  padding: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.table-tools-left { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
+.table-tools-right { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--surface);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Consumer Detail View (Book View - Stylish Modal) */
+.book-wrap {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+.book {
+  background: var(--surface);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  padding: 30px;
+  scrollbar-width: thin;
+}
+.book.pending { border-top: 8px solid var(--danger); }
+.book:not(.pending) { border-top: 8px solid var(--success); }
+
+.book h3 { 
+  font-size: 22px;
+  margin: 0 0 20px 0; 
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.book-section-title {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 20px 0 10px 0;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.book-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+  gap: 12px; 
+}
+.book .row { 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+.book .row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  border-color: var(--primary);
+}
+.book .label { 
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.book .value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: right;
+}
+.book .value-bold { 
+  font-weight: 800; 
+  color: var(--primary); 
+}
+.book-close { 
+  position: absolute; 
+  top: 20px; 
+  right: 25px; 
+  cursor: pointer; 
+  font-size: 24px; 
+  color: var(--muted);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg);
+  transition: all 0.2s;
+  z-index: 10;
+}
+.book-close:hover {
+  background: var(--danger);
+  color: #fff;
+  transform: rotate(90deg);
+}
+.book-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(37, 99, 235, 0.05);
+  border-radius: 16px;
+}
+.book-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.book-badge.pending { background: var(--danger); color: #fff; }
+.book-badge.success { background: var(--success); color: #fff; }
+
+
+/* About Section */
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+.about-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: all .2s;
+}
+.about-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.about-card-title { font-weight: bold; margin-bottom: 12px; color: var(--primary); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.about-card ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--text); }
+.about-card li { margin-bottom: 8px; }
+
+/* Mobile Specific */
+.footer { text-align: center; margin-top: 30px; font-size: 14px; color: var(--muted); padding: 20px 0; border-top: 1px solid var(--border); }
+
+@media (max-width: 768px) {
+  body { padding: 0 10px 10px 10px; }
+  .sticky-header { padding: 5px; }
+  .top-msg { margin: 0 -10px 15px -10px; width: calc(100% + 20px); border-radius: 0; font-size: 11px; padding: 8px; }
+  h2 { font-size: 16px; padding: 10px; margin: 5px 0; text-align: left; max-width: 70%; }
+  .header-controls { right: 10px; gap: 8px; }
+  .font-controls { display: none !important; } /* Hide font controls on mobile to save space */
+  
+  .navbar { flex-direction: column; padding: 10px; gap: 5px; }
+  .nav-item { width: 100%; padding: 12px; text-align: center; }
+  .nav-submenu { position: static; transform: none; box-shadow: none; border: none; padding: 0 0 0 15px; width: 100%; display: none; }
+  .nav-item:hover .nav-submenu { display: block; }
+
+  .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .summary-card { padding: 12px; min-height: 80px; }
+  .summary-card .val { font-size: 18px; }
+  .summary-card .lbl { font-size: 11px; }
+
+  .filters { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
+  .filter-group { flex-direction: column; align-items: stretch; gap: 5px; }
+  .filter-group-title { text-align: left; font-size: 12px; }
+  #consumerSearch { width: 100%; }
+
+  .table-tools { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
+  .table-tools-left, .table-tools-right { flex-direction: column; width: 100%; }
+  .table-tools button, .table-tools select, .table-tools input { width: 100% !important; margin: 0 !important; }
+
+  .active-report-container { padding: 10px; }
+  .report-header { font-size: 16px; padding: 10px; }
+  
+  .report-line { 
+    grid-template-columns: 1fr; 
+    display: flex; 
+    flex-direction: column; 
+    padding: 12px; 
+    border-radius: 12px;
+    background: var(--surface);
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .report-line.header { display: none; }
+  .report-line > div { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 8px 0; 
+    border-bottom: 1px dashed var(--border);
+    width: 100%;
+    font-size: 12px;
+  }
+  .report-line > div::before { content: attr(data-label); font-weight: bold; color: var(--muted); margin-right: 15px; }
+  .report-line > div:last-child { border-bottom: none; }
+
+  /* Book View Mobile Optimization */
+  .book { padding: 20px 15px; border-radius: 16px; }
+  .book h3 { font-size: 18px; flex-direction: column; align-items: flex-start; gap: 5px; }
+  .book-grid { grid-template-columns: 1fr; gap: 8px; }
+  .book .row { padding: 8px 10px; }
+  .book-action-bar { padding: 10px; gap: 8px; }
+  .book-action-bar > div { font-size: 11px; }
+  .book-action-bar > div:nth-child(even) { display: none; } /* Hide separators on mobile */
+  .book-close { top: 15px; right: 15px; width: 32px; height: 32px; font-size: 18px; }
+
+  .pagination { flex-direction: column; gap: 12px; padding: 10px; }
+  .pagination span { font-size: 12px; }
+  
+  .chart-container { height: 250px; }
+  #areaHeatMap { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .heat-card { padding: 10px; }
+  .heat-card .area-val { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+  .summary-grid { grid-template-columns: 1fr; }
+  .sticky-header h2 { font-size: 14px; }
+  .top-msg { font-size: 10px; }
+  #areaHeatMap { grid-template-columns: 1fr !important; }
+}
+
+/* Skeleton Loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+#areaHeatMap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 25px;
+}
+.heat-card {
+  padding: 15px;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.heat-card:hover { transform: scale(1.03); }
+.heat-card .area-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heat-card .area-val { font-size: 20px; font-weight: 800; }
+.heat-card .area-pct { font-size: 12px; opacity: 0.9; }
+
+.skeleton-card { height: 100px; width: 100%; margin-bottom: 10px; border-radius: 12px; }
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .top-msg, .navbar, .filters, .file-upload, #toggleCardsBtn, .footer, .book-close, .table-tools, .pagination { display: none !important; }
+  .table-wrap, .active-report-container { box-shadow: none; border: 1px solid #000; padding: 0; }
+  th, td { font-size: 10px; padding: 4px; }
+  h2 { display: block !important; border: none; box-shadow: none; padding: 5px; margin: 5px 0; }
+}
+#toggleCardsBtn {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 auto;
+}
+#toggleCardsBtn:hover {
+  background: var(--border);
+  border-color: var(--primary);
+}
+#toggleCardsBtn::before {
+  content: '📊';
+}
+.center-btn-wrap {
+  text-align: center;
+  margin: 10px 0 20px 0;
+}
+.record-count-wrap {
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+#lockBtn { background: #e74c3c; }
+#unlockBtn { background: #27ae60; display: none; }
+
+.about-content {
+  padding: 14px;
+  line-height: 1.6;
+}
+.about-p {
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+.about-footer {
+  margin-top: 25px;
+  font-weight: bold;
+  color: var(--text);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 15px;
+}
+.toparea-grid {
+  display: none;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+</style>
+</head>
+<body>
+<div id="loadingOverlay">
+  <div class="loader"></div>
+  <div id="loadingText">प्रसंस्करण हो रहा है, कृपया प्रतीक्षा करें...</div>
+</div>
+<div class="sticky-header">
+  <div class="top-msg">IVRS बुकिंग - 8888823456 | <strong>मिस्ड कॉल बुकिंग - 9493602222</strong> | WhatsApp बुकिंग - 9222201122</div>
+  <div id="dataUpdateMsg" class="data-update-msg" style="display:none">
+    डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
+    <span id="idleTimer" style="margin-left:15px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none;"></span>
+  </div>
+  <h2>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</h2>
+  <div class="header-controls" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); display: flex; align-items: center; gap: 12px;">
+    <div class="font-controls" style="display: flex; gap: 5px; background: var(--surface); padding: 4px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+      <button id="fontSmall" title="Small Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:11px; cursor:pointer;">A-</button>
+      <button id="fontNormal" title="Normal Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:13px; cursor:pointer;">A</button>
+      <button id="fontBig" title="Big Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:15px; cursor:pointer;">A+</button>
+    </div>
+    <button id="themeToggle" style="background:transparent; border:none; font-size:20px; cursor:pointer; padding:0; display:flex; align-items:center;" title="Toggle Dark Mode">🌙</button>
+    <button id="reUploadBtn" style="display:none; background:var(--primary); color:#fff; border:none; padding:6px 15px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:var(--shadow); transition:transform 0.2s;" onclick="reUpload()">🔄 Re-Upload</button>
+  </div>
+</div>
+
+<div class="file-upload drop-zone" id="dropZone">
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
+  <div style="font-weight:bold;margin-bottom:10px;font-size:18px">फ़ाइल यहाँ ड्राप करें या क्लिक करके अपलोड करें</div>
+  <div class="file-help">फ़ाइल अपलोड करने के लिए: कृपया अपनी CSV फ़ाइल <strong>cDCMS</strong> से डाउनलोड करें। <br> <strong>रास्ता</strong> - <strong>cDCMS</strong> - ConsumerManagement/ConsumerDetails/SearchConsumer -<strong>Search</strong> पर क्लिक करें फिर <strong>Export to Excel</strong> पर क्लिक करें।</div>
+  <div style="margin-top:15px; font-size:12px; color:var(--muted);">
+    अगर डैशबोर्ड सही से नहीं दिख रहा? <a href="javascript:void(0)" onclick="event.stopPropagation(); reUpload();" style="color:var(--primary); text-decoration:underline;">यहाँ क्लिक करके डेटा साफ़ करें</a>
+  </div>
+</div>
+
+<div class="center-btn-wrap">
+  <button id="toggleCardsBtn">कार्ड छुपाएं / दिखाएं</button>
+</div>
+
+<div id="summaryCards" class="summary-grid" style="display:none">
+  <div class="summary-card" draggable="true" data-id="sumTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल उपभोक्ता</div>
+    <div class="val" id="sumTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumUjjwala">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला उपभोक्ता</div>
+    <div class="val" id="sumUjjwala">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumTotalEkycPct">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल eKYC %</div>
+    <div class="val" id="sumTotalEkycPct">0%</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumPmuyEkycPct">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला eKYC %</div>
+    <div class="val" id="sumPmuyEkycPct">0%</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumSbcConsumerTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">SBC कुल उपभोक्ता</div>
+    <div class="val" id="sumSbcConsumerTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumSbcConsumerPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">SBC उज्ज्वला उपभोक्ता</div>
+    <div class="val" id="sumSbcConsumerPMUY">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumDBCTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल DBC उपभोक्ता</div>
+    <div class="val" id="sumDBCTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumDBCPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला DBC उपभोक्ता</div>
+    <div class="val" id="sumDBCPMUY">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumTotalDbcPct">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल DBC %</div>
+    <div class="val" id="sumTotalDbcPct">0%</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumPmuyDbcPct">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला DBC %</div>
+    <div class="val" id="sumPmuyDbcPct">0%</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumPending">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">लंबित eKYC</div>
+    <div class="val" id="sumPending">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumUjjwalaPending">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला लंबित eKYC</div>
+    <div class="val" id="sumUjjwalaPending">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumCompletedMonthTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल संपन्न eKYC चालू माह</div>
+    <div class="val" id="sumCompletedMonthTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumCompletedMonthPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला संपन्न eKYC चालू माह</div>
+    <div class="val" id="sumCompletedMonthPMUY">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumEkycYesterday">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल संपन्न eKYC कल</div>
+    <div class="val" id="sumEkycYesterday">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumEkycToday">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">कुल संपन्न eKYC आज</div>
+    <div class="val" id="sumEkycToday">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumTodayEkycPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला संपन्न eKYC आज</div>
+    <div class="val" id="sumTodayEkycPMUY">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumSVMonth">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">SV निर्गत (माह)</div>
+    <div class="val" id="sumSVMonth">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumUjjwalaSVMonth">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">उज्ज्वला SV निर्गत (माह)</div>
+    <div class="val" id="sumUjjwalaSVMonth">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumPendingSvTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">लंबित SV कुल</div>
+    <div class="val" id="sumPendingSvTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumPendingSvPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">लंबित SV उज्ज्वला</div>
+    <div class="val" id="sumPendingSvPMUY">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumNoMobile">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">मोबाइल अनरजिस्टर्ड</div>
+    <div class="val" id="sumNoMobile">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumNCTC">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">NCTC उपभोक्ता</div>
+    <div class="val" id="sumNCTC">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumNilRefillTotal">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">eKYC संपन्न vs शुन्य रिफिल कुल</div>
+    <div class="val" id="sumNilRefillTotal">0</div>
+  </div>
+  <div class="summary-card" draggable="true" data-id="sumNilRefillPMUY">
+    <span class="close-btn" onclick="hideCard(this)">✕</span>
+    <div class="lbl">eKYC संपन्न vs शुन्य रिफिल उज्ज्वला</div>
+    <div class="val" id="sumNilRefillPMUY">0</div>
+  </div>
+  </div>
+
+<div id="uploadMsg" class="flash-msg">फाइल सफलतापूर्वक अपलोड की गई।</div>
+
+<div id="flashEKYC" class="alert-msg">सभी सक्रिय एलपीजी उपभोक्ताओं के लिए ई-केवाईसी प्रमाणीकरण अनिवार्य है।</div>
+<div id="flashMobile" class="alert-msg">बुकिंग, DAC, सब्सिडी से संबंधित सेवाओं के लिए मोबाइल नंबर रजिस्टर करना ज़रूरी है।</div>
+
+<div id="bookView"></div>
+
+<div class="filters" id="topFilters">
+ <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे और View Info पर क्लिक करें।">
+ <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
+ <button id="resetBtn">रीसेट करें</button>
+ <button id="lockBtn">लॉक करें</button>
+  <button id="unlockBtn">अनलॉक करें</button>
+</div>
+
+<!-- PIN Modal -->
+<div id="pinModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:white; padding:25px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.2); width:320px; text-align:center;">
+    <h3 style="margin-top:0; color:#333;">Dashboard अनलॉक करें</h3>
+    <p style="font-size:14px; color:#666; margin-bottom:20px;">कृपया PIN दर्ज करें</p>
+    <input type="password" id="pinInput" placeholder="PIN दर्ज करें" style="width:100%; padding:12px; margin-bottom:20px; border:2px solid #ddd; border-radius:8px; font-size:18px; text-align:center; outline:none; transition:border-color 0.3s;">
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+      <button id="cancelPin" style="flex:1; padding:12px; border:none; border-radius:8px; background:#f1f5f9; color:#475569; cursor:pointer; font-weight:bold;">रद्द करें</button>
+      <button id="submitPin" style="flex:1; padding:12px; border:none; border-radius:8px; background:#27ae60; color:white; cursor:pointer; font-weight:bold;">अनलॉक</button>
+    </div>
+    <button id="forgotPinBtn" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:13px; text-decoration:underline;">PIN भूल गए?</button>
+  </div>
+</div>
+
+<!-- Recovery Modal -->
+<div id="recoveryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:11000; align-items:center; justify-content:center;">
+  <div style="background:white; padding:25px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.2); width:350px; text-align:center;">
+    <h3 id="recoveryTitle" style="margin-top:0; color:#333;">Security Setup</h3>
+    <div id="setupView">
+      <p style="font-size:14px; color:#666; margin-bottom:15px;">PIN रिकवरी के लिए एक सुरक्षा प्रश्न चुनें</p>
+      <select id="securityQuestion" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:8px;">
+        <option value="pet">आपके पहले पालतू जानवर का नाम?</option>
+        <option value="school">आपके पहले स्कूल का नाम?</option>
+        <option value="city">आपका जन्म स्थान?</option>
+      </select>
+      <input type="text" id="securityAnswer" placeholder="आपका उत्तर" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+      <button id="saveRecovery" style="width:100%; padding:12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer; font-weight:bold;">सुरक्षित करें</button>
+    </div>
+    <div id="recoverView" style="display:none;">
+      <p id="displayQuestion" style="font-size:14px; color:#666; margin-bottom:15px;"></p>
+      <input type="text" id="checkAnswer" placeholder="अपना उत्तर दर्ज करें" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
+      <button id="verifyRecovery" style="width:100%; padding:12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer; font-weight:bold;">PIN रीसेट करें</button>
+    </div>
+    <button id="closeRecovery" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:13px;">बंद करें</button>
+  </div>
+</div>
+
+<div class="navbar">
+ <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
+ <div class="nav-dropdown">
+   <div class="nav-item" onclick="toggleReports(this)">प्रतिक्रियाएँ</div>
+   <div class="nav-submenu" id="reportsSubmenu">
+    <div class="nav-item" onclick="openTab('reportBody', this)">प्रकार-विशेष eKYC रिपोर्ट</div>
+    <div class="nav-item" onclick="openTab('mobileReport', this)">मोबाइल रजिस्टरेशन स्थिति</div>
+    <div class="nav-item" onclick="openTab('refillReport', this)">Penging eKYC vs रिफिल</div>
+    <div class="nav-item" onclick="openTab('completedReport', this)">पूर्ण eKYC टाइमलाइन</div>
+     <div class="nav-item" onclick="openTab('nilRefillReport', this)">Nil Refill (FY 25-26)</div>
+    <div class="nav-item" onclick="openTab('svReport', this)">SV Generation Report</div>
+    <div class="nav-item" onclick="openTab('sbcDbcReport', this)">SBC DBC Report vs eKYC</div>
+    <div class="nav-item" onclick="openTab('pendingEkycReport', this)">Pending eKYC vs Type</div>
+     <div class="nav-item" onclick="openTab('beneficiaryTypeReport', this)">प्राप्तकर्ता प्रकार</div>
+     <div class="nav-item" onclick="openTab('bookingSourceReport', this)">बुकिंग स्रोत</div>
+     <div class="nav-item" onclick="openTab('topAreas', this)">टॉप 5 क्षेत्र</div>
+   <div class="nav-item" onclick="openTab('areaEkycProgress', this)">क्षेत्र-विशेष eKYC प्रगति</div>
+   <div class="nav-item" onclick="openTab('refillBuckets', this)">Refill Recency Buckets</div>
+   <div class="nav-item" onclick="openTab('bookingSourceCompletion', this)">बुकिंग स्रोत पूर्णता</div>
+   <div class="nav-item" onclick="openTab('dataQualityReport', this)">डेटा गुणवत्ता</div>
+     <div class="nav-item" onclick="openTab('trendAnalysisReport', this)">Trend Analysis</div>
+   </div>
+ </div>
+ <div class="nav-item" onclick="showRequest(this)">उपभोक्ता अनुरोध</div>
+ <div class="nav-item active" onclick="showAbout(this)">डैशबोर्ड के बारे में</div>
+</div>
+
+<div class="active-report-container" id="reportContainer">
+ <div id="reportHeader" class="report-header"></div>
+ <div class="report-content" id="reportBody"></div>
+ <div class="report-content" id="mobileReport"></div>
+ <div class="report-content" id="refillReport"></div>
+ <div class="report-content" id="completedReport"></div>
+ <div class="report-content" id="nilRefillReport"></div>
+ <div class="report-content" id="svReport"></div>
+ <div class="report-content" id="sbcDbcReport"></div>
+ <div class="report-content" id="pendingEkycReport"></div>
+ <div class="report-content" id="beneficiaryTypeReport"></div>
+ <div class="report-content" id="bookingSourceReport"></div>
+ <div class="report-content" id="areaEkycProgress"></div>
+ <div class="report-content" id="refillBuckets"></div>
+ <div class="report-content" id="bookingSourceCompletion"></div>
+ <div class="report-content" id="dataQualityReport"></div>
+ <div class="report-content" id="trendAnalysisReport"></div>
+ <div class="toparea-grid report-content" id="topAreas"></div>
+</div>
+<div class="active-report-container" id="aboutContainer" style="display:none">
+ <div class="report-header">डैशबोर्ड के बारे में (System Summary)</div>
+ <div class="about-content">
+  <p class="about-p">यह एक <strong>"Privacy-First"</strong> और <strong>"Action-Oriented"</strong> MIS डैशबोर्ड है, जिसे विशेष रूप से HPCL LPG वितरकों के लिए e-KYC की निगरानी और परिचालन दक्षता (Operational Efficiency) बढ़ाने के लिए डिज़ाइन किया गया है। यह cDCMS के रॉ डेटा को विज़ुअल इंटेलिजेंस में बदलकर वितरकों को त्वरित निर्णय लेने में मदद करता है।</p>
+  
+  <div class="about-grid">
+   <div class="about-card">
+    <div class="about-card-title">🔒 डेटा सुरक्षा और गोपनीयता</div>
+    <ul>
+     <li><strong>100% क्लाइंट-साइड:</strong> आपका डेटा कभी भी आपके ब्राउज़र से बाहर नहीं जाता। कोई सर्वर नहीं, कोई डेटा चोरी का डर नहीं।</li>
+     <li><strong>सुरक्षित एक्सेस:</strong> PIN-आधारित लॉक सिस्टम यह सुनिश्चित करता है कि केवल अधिकृत व्यक्ति ही डेटा देख सके।</li>
+    </ul>
+   </div>
+
+   <div class="about-card">
+    <div class="about-card-title">📊 एडवांस्ड विज़ुअलाइज़ेशन</div>
+    <ul>
+     <li><strong>इंटरेक्टिव चार्ट्स:</strong> रिफिल ट्रेंड्स, e-KYC प्रोग्रेस और एरिया-वाइज हीटमैप्स के जरिए डेटा का आसान विश्लेषण।</li>
+     <li><strong>स्मार्ट समरी:</strong> एक नज़र में कुल उपभोक्ता, उज्ज्वला, और पेंडिंग e-KYC की रियल-टाइम स्थिति।</li>
+    </ul>
+   </div>
+
+   <div class="about-card">
+    <div class="about-card-title">📲 ऑटोमेटेड कम्युनिकेशन</div>
+    <ul>
+     <li><strong>वन-क्लिक WhatsApp:</strong> e-KYC पेंडेंसी, DBC अपग्रेड और NCTC सब्सिडी के लिए प्री-कॉन्फ़िगर संदेश भेजने की सुविधा।</li>
+     <li><strong>स्मार्ट फिल्टर्स:</strong> उपभोक्ता की स्थिति और आवश्यकता के आधार पर डेटा को फ़िल्टर कर तुरंत संपर्क करने का विकल्प।</li>
+    </ul>
+   </div>
+
+   <div class="about-card">
+    <div class="about-card-title">📑 व्यापक MIS रिपोर्ट्स</div>
+    <ul>
+     <li><strong>15+ विस्तृत रिपोर्ट्स:</strong> मोबाइल रजिस्ट्रेशन, SV जेनरेशन, डेटा क्वालिटी, और बुकिंग सोर्स जैसे महत्वपूर्ण मॉड्यूल।</li>
+     <li><strong>क्लिक-टू-डेटा:</strong> चार्ट के किसी भी हिस्से पर क्लिक करें और सीधे संबंधित उपभोक्ता सूची तक पहुँचें।</li>
+    </ul>
+   </div>
+
+   <div class="about-card">
+    <div class="about-card-title">🚀 उच्च प्रदर्शन और उपयोगिता</div>
+    <ul>
+     <li><strong>फास्ट प्रोसेसिंग:</strong> हज़ारों उपभोक्ताओं का डेटा कुछ ही सेकंड में लोड और प्रोसेस करने की क्षमता।</li>
+     <li><strong>रिस्पॉन्सिव डिज़ाइन:</strong> डेस्कटॉप के साथ-साथ मोबाइल पर भी सहज अनुभव के लिए पूरी तरह अनुकूलित।</li>
+    </ul>
+   </div>
+
+   <div class="about-card">
+    <div class="about-card-title">🖨️ स्मार्ट टूल्स</div>
+    <ul>
+     <li><strong>प्रिंट-रेडी लेआउट:</strong> ऑफिस वर्क के लिए साफ-सुथरी और व्यवस्थित रिपोर्ट प्रिंटिंग सुविधा।</li>
+     <li><strong>एक्सेल एक्सपोर्ट:</strong> आगे के विश्लेषण के लिए फ़िल्टर किए गए डेटा को CSV फॉर्मेट में डाउनलोड करने का विकल्प।</li>
+    </ul>
+   </div>
+  </div>
+
+  <p class="about-footer">🎯 हमारा लक्ष्य: डेटा की जटिलता को कम करना और वितरकों को डिजिटल रूप से सशक्त बनाकर "Digital India" की दिशा में एक कदम आगे बढ़ाना।</p>
+ </div>
+</div>
+<div class="active-report-container" id="requestContainer" style="display:none">
+ <div class="report-header">उपभोक्ता के अनुरोध पर</div>
+ <div class="filters">
+  <input type="text" id="requestMobile" placeholder="दूरभाष संख्या">
+  <select id="requestType">
+   <option value="eKYC">लंबित eKYC</option>
+   <option value="DBC">DBC अनुरोध</option>
+   <option value="NCTC">NPCI आधार-बैंक लिंकिंग</option>
+  </select>
+  <button id="requestSend">WhatsApp सन्देश भेजें</button>
+ </div>
+</div>
+
+<div id="consumerDataContainer" style="display:none">
+<div class="filters">
+ <select id="ekycFilter"><option value="">All eKYC</option></select>
+ <select id="areaFilter"><option value="">All Areas</option></select>
+ <select id="natureFilter"><option value="">All Nature</option></select>
+ <select id="mobileStatusFilter"><option value="">All Mobile Status</option></select>
+ <select id="consumerStatusFilter"><option value="">All Consumer Status</option></select>
+ <select id="connectionTypeFilter"><option value="">All Connection Type</option></select>
+ <select id="pfmsFilter"><option value="">All Beneficiary Type</option></select>
+ <div class="filter-group">
+  <span class="filter-group-title">रिफिल तारीख</span>
+  <input type="date" id="refillFrom" placeholder="From" aria-label="Refill From">
+  <input type="date" id="refillTo" placeholder="To" aria-label="Refill To">
+ </div>
+ <div class="filter-group">
+  <span class="filter-group-title">ईकेवाईसी तारीख</span>
+  <input type="date" id="ekycFrom" placeholder="From" aria-label="eKYC From">
+  <input type="date" id="ekycTo" placeholder="To" aria-label="eKYC To">
+ </div>
+ <select id="sortBy"><option value="">Sort By</option></select>
+ <select id="sortOrder">
+  <option value="asc">asc</option>
+  <option value="desc">desc</option>
+ </select>
+ <button id="resetFilterBtn" onclick="resetFilters()">फ़िल्टर रिसेट करे</button>
+</div>
+<div class="table-tools">
+ <div class="table-tools-left">
+  <input type="text" id="tableSearch" placeholder="डेटा के भीतर खोजें...">
+  <select id="addColumn"><option value="">Add column</option></select>
+  <select id="removeColumn"><option value="">Remove column</option></select>
+ </div>
+ <div class="table-tools-right">
+  <button onclick="doPrintFixed()">प्रिंट</button>
+  <button onclick="exportToCSV()">एक्सेल</button>
+ </div>
+</div>
+
+<div class="table-wrap"><table id="dataTable"></table></div>
+<div class="record-count-wrap">Total Records: <span id="recordCount">0</span></div>
+<div class="pagination"><button id="prevPage">Prev</button><span>Page <input type="number" id="pageInput" value="1" min="1" style="width:55px"> / <span id="totalPages">1</span></span><button id="nextPage">Next</button></div>
+</div>
+<div class="footer">Designed by Deepak Singh 💌deepak.youvi@gmail.com</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function openTab(id,btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='block';el('consumerDataContainer').style.display='block';const c=el(id);c.style.display=c.classList.contains('toparea-grid')?'flex':'block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const t=reportTitles[id]||'';const rh=el('reportHeader');if(rh)rh.textContent=t}
+function showConsumerData(btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const rh=el('reportHeader');if(rh)rh.textContent='';if(filteredData.length===0||filteredData.length===data.length){applyAll();}}
+function toggleReports(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display=(sm.style.display==='none'||sm.style.display==='')?'block':'none'}
+function showRequest(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display='none';el('requestContainer').style.display='block'}
+function showAbout(btn){
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if(btn){
+    btn.classList.add('active');
+  } else {
+    const aboutBtn = Array.from(document.querySelectorAll('.nav-item')).find(b => b.textContent.includes('डैशबोर्ड के बारे में'));
+    if(aboutBtn) aboutBtn.classList.add('active');
+  }
+  const sm=el('reportsSubmenu');
+  if(sm)sm.style.display='none';
+  el('reportContainer').style.display='none';
+  el('consumerDataContainer').style.display='none';
+  el('requestContainer').style.display='none';
+  const ac=document.getElementById('aboutContainer');
+  if(ac)ac.style.display='block';
+}
+document.addEventListener('click',function(e){const nd=document.querySelector('.nav-dropdown');const sm=el('reportsSubmenu');if(!nd||!sm)return;const inside=nd.contains(e.target);if(sm.style.display==='block'&&!inside){sm.style.display='none'}})
+const el=id=>document.getElementById(id);
+
+  function reUpload(){
+    if(!confirm('क्या आप दूसरी फ़ाइल अपलोड करना चाहते हैं? वर्तमान डेटा हट जाएगा।')) return;
+    localStorage.removeItem('cachedData');
+    location.reload();
+  }
+
+// Theme Toggle Logic
+const themeToggle = el('themeToggle');
+if (localStorage.getItem('dark-mode') === 'true') {
+  document.body.classList.add('dark-mode');
+  themeToggle.textContent = '☀️';
+}
+themeToggle.onclick = () => {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('dark-mode', isDark);
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+};
+
+// Font Size Control Logic
+const fontSmall = el('fontSmall');
+const fontNormal = el('fontNormal');
+const fontBig = el('fontBig');
+
+function setFontSize(size) {
+  document.body.classList.remove('font-sm', 'font-lg');
+  [fontSmall, fontNormal, fontBig].forEach(btn => {
+    btn.style.background = 'var(--bg)';
+    btn.style.color = 'var(--text)';
+    btn.style.border = '1px solid var(--border)';
+  });
+
+  if (size === 'small') {
+    document.body.classList.add('font-sm');
+    fontSmall.style.background = 'var(--primary)';
+    fontSmall.style.color = '#fff';
+    fontSmall.style.border = 'none';
+  } else if (size === 'big') {
+    document.body.classList.add('font-lg');
+    fontBig.style.background = 'var(--primary)';
+    fontBig.style.color = '#fff';
+    fontBig.style.border = 'none';
+  } else {
+    fontNormal.style.background = 'var(--primary)';
+    fontNormal.style.color = '#fff';
+    fontNormal.style.border = 'none';
+  }
+  localStorage.setItem('preferred-font-size', size);
+}
+
+fontSmall.onclick = () => setFontSize('small');
+fontNormal.onclick = () => setFontSize('normal');
+fontBig.onclick = () => setFontSize('big');
+
+// Load saved font size
+const savedFontSize = localStorage.getItem('preferred-font-size') || 'normal';
+setFontSize(savedFontSize);
+
+// Summary Card Management (Drag, Drop, Hide)
+function initSummaryCards() {
+  const container = el('summaryCards');
+  const cards = container.querySelectorAll('.summary-card');
+  let draggedCard = null;
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      draggedCard = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      saveCardState();
+    });
+
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(container, e.clientX, e.clientY);
+      if (afterElement == null) {
+        container.appendChild(draggedCard);
+      } else {
+        container.insertBefore(draggedCard, afterElement);
+      }
+    });
+  });
+
+  // Load saved state
+  const savedOrder = null; // Forced reset to follow HTML order
+  const hiddenCards = []; // Forced reset to show all 25 cards
+  
+  if (savedOrder) {
+    savedOrder.forEach(id => {
+      const card = container.querySelector(`[data-id="${id}"]`);
+      if (card) container.appendChild(card);
+    });
+  }
+
+  hiddenCards.forEach(id => {
+    const card = container.querySelector(`[data-id="${id}"]`);
+    if (card) card.style.display = 'none';
+  });
+}
+
+function getDragAfterElement(container, x, y) {
+  const draggableElements = [...container.querySelectorAll('.summary-card:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function hideCard(btn) {
+  const card = btn.closest('.summary-card');
+  card.style.display = 'none';
+  saveCardState();
+}
+
+function saveCardState() {
+  const container = el('summaryCards');
+  const cards = [...container.querySelectorAll('.summary-card')];
+  const order = cards.map(c => c.dataset.id);
+  const hidden = cards.filter(c => c.style.display === 'none').map(c => c.dataset.id);
+  
+  localStorage.setItem('summary-card-order', JSON.stringify(order));
+  localStorage.setItem('summary-card-hidden', JSON.stringify(hidden));
+}
+
+// Notification System
+function showToast(msg, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `notification-toast ${type === 'congrats' ? 'congrats' : ''}`;
+  const icon = type === 'congrats' ? '🎉' : '✅';
+  toast.innerHTML = `<span class="icon">${icon}</span><span class="msg">${msg}</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 500);
+  }, 5000);
+}
+
+function checkGoals(stats) {
+  const ekycPercent = (stats.completed / stats.total) * 100;
+  if (ekycPercent >= 90 && !localStorage.getItem('goal-90-reached')) {
+    showToast('बधाई हो! आपने 90% eKYC लक्ष्य पूरा कर लिया है!', 'congrats');
+    localStorage.setItem('goal-90-reached', 'true');
+  }
+}
+
+let charts = {};
+function createChart(id, type, labels, datasets, options = {}) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  const isDark = document.body.classList.contains('dark-mode');
+  const textColor = isDark ? '#f8fafc' : '#1f2937';
+  
+  const defaultOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: textColor } },
+      tooltip: {
+        callbacks: {
+          afterLabel: function(context) {
+            return 'क्लिक करें विवरण देखने के लिए';
+          }
+        }
+      }
+    },
+    onClick: (e, elements) => {
+      if (elements.length > 0 && options.onDrillDown) {
+        const index = elements[0].index;
+        const label = labels[index];
+        const datasetIndex = elements[0].datasetIndex;
+        const datasetLabel = datasets[datasetIndex].label;
+        options.onDrillDown(label, datasetLabel);
+      }
+    },
+    scales: type !== 'pie' && type !== 'doughnut' ? {
+      x: { ticks: { color: textColor }, grid: { color: isDark ? '#334155' : '#e5e7eb' } },
+      y: { ticks: { color: textColor }, grid: { color: isDark ? '#334155' : '#e5e7eb' } }
+    } : {}
+  };
+
+  charts[id] = new Chart(ctx, {
+    type: type,
+    data: { labels: labels, datasets: datasets },
+    options: Object.assign({}, defaultOptions, options)
+  });
+}
+
+const reportTitles={
+  reportBody:'Consumer Nature (MIS)',
+  mobileReport:'मोबाइल रजिस्ट्रेशन स्टेटस',
+  refillReport:'पेंडिंग eKYC vs रिफिल',
+  completedReport:'पूर्ण eKYC टाइमलाइन',
+  nilRefillReport:'Nil Refill (FY 25-26)',
+  svReport:'SV Generation Report',
+  sbcDbcReport:'SBC DBC Report vs eKYC',
+  pendingEkycReport:'Pending eKYC vs Type',
+  beneficiaryTypeReport:'प्राप्तकर्ता प्रकार',
+  bookingSourceReport:'बुकिंग स्रोत',
+  topAreas:'टॉप 5 क्षेत्र',
+  areaEkycProgress:'क्षेत्र-विशेष eKYC प्रगति',
+  refillBuckets:'Refill Recency Buckets',
+  bookingSourceCompletion:'बुकिंग स्रोत पूर्णता',
+  dataQualityReport:'डेटा गुणवत्ता',
+  trendAnalysisReport:'Trend Analysis'
+};
+const fileInput=el('fileInput'),uploadMsg=el('uploadMsg');
+const flashEKYC=el('flashEKYC'),flashMobile=el('flashMobile');
+const ekycFilter=el('ekycFilter'),areaFilter=el('areaFilter'),natureFilter=el('natureFilter'),mobileStatusFilter=el('mobileStatusFilter');
+const consumerStatusFilter=el('consumerStatusFilter'),connectionTypeFilter=el('connectionTypeFilter'),pfmsFilter=el('pfmsFilter');
+const refillFrom=el('refillFrom'),refillTo=el('refillTo'),ekycFrom=el('ekycFrom'),ekycTo=el('ekycTo');
+const sortBy=el('sortBy'),sortOrder=el('sortOrder');
+const consumerSearch=el('consumerSearch'),viewBtn=el('viewBtn'),resetBtn=el('resetBtn');
+const tableSearch=el('tableSearch'),addColumn=el('addColumn'),removeColumn=el('removeColumn');
+const dataTable=el('dataTable'),prevPage=el('prevPage'),nextPage=el('nextPage');
+const pageInput=el('pageInput'),totalPagesSpan=el('totalPages');
+const requestMobile=el('requestMobile'),requestType=el('requestType'),requestSend=el('requestSend');
+const lockBtn=el('lockBtn'),unlockBtn=el('unlockBtn');
+
+let data=[],filteredData=[],allColumns=[],visibleCols=['Consumer No','Consumer Name','Mobile No','Consumer Nature','EKYC Status','Delivery Area','LastRefillDate','EKYC Date'];
+let currentPage=1;const pageSize=25;
+let customFilter=null;
+
+function parseCSV(t){
+  const lines = t.split(/\r?\n/).filter(x => x.trim());
+  if (lines.length === 0) return [];
+  
+  const parseLine = (line) => {
+    const values = [];
+    let curr = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') inQ = !inQ;
+      else if (c === ',' && !inQ) { values.push(curr.trim().replace(/^"|"$/g, '')); curr = ''; }
+      else curr += c;
+    }
+    values.push(curr.trim().replace(/^"|"$/g, ''));
+    return values;
+  };
+
+  const headers = parseLine(lines[0]).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const values = parseLine(line);
+    const o = {};
+    headers.forEach((h, i) => { if(h) o[h] = (values[i] || '').trim(); });
+    return o;
+  });
+}
+function parseInputDate(s){if(!s)return null;const p=s.split('-');if(p.length<3)return null;const d=new Date(+p[0],+p[1]-1,+p[2]);return isNaN(d)?null:d}
+
+fileInput.onchange=function(){if(!this.files[0])return;handleFile(this.files[0])};
+
+function handleFile(f){
+ const loading = el('loadingOverlay');
+ loading.style.display = 'flex';
+ el('loadingText').textContent = 'फ़ाइल लोड हो रही है...';
+ 
+ const cards = document.querySelectorAll('.summary-card .val');
+ cards.forEach(c => c.innerHTML = '<div class="skeleton" style="height:20px; width:60%; margin:0 auto;"></div>');
+ if(el('dataTable')) el('dataTable').innerHTML = '<tr><td colspan="8"><div class="skeleton" style="height:40px; width:100%;"></div></td></tr>';
+
+ const ext=f.name.split('.').pop().toLowerCase();
+ const r=new FileReader();
+ r.onload=()=>{
+  try {
+   el('loadingText').textContent = 'डेटा प्रोसेस हो रहा है...';
+   if(ext==='csv') data=parseCSV(r.result);
+   else {
+    const wb=XLSX.read(r.result,{type:'array'});
+    const rawData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    // Clean keys for Excel data
+    data = rawData.map(row => {
+      const cleanRow = {};
+      Object.keys(row).forEach(k => {
+        cleanRow[k.trim()] = String(row[k]).trim();
+      });
+      return cleanRow;
+    });
+   }
+   
+   if (!data || data.length === 0) {
+     throw new Error('फ़ाइल में कोई डेटा नहीं मिला।');
+   }
+
+   const headers = Object.keys(data[0]);
+   const required = ['Consumer No', 'Consumer Name'];
+   const missing = required.filter(h => !headers.includes(h));
+   
+  if (missing.length > 0) {
+     // Check if headers might be shifted or slightly different
+     const altRequired = {
+       'Consumer No': ['Consumer Number', 'CONSUMER_NO', 'ConsumerNo'],
+       'Consumer Name': ['Name', 'CONSUMER_NAME', 'ConsumerName']
+     };
+     
+     let allFound = true;
+     required.forEach(req => {
+       if (!headers.includes(req)) {
+         const alt = altRequired[req].find(a => headers.includes(a));
+         if (alt) {
+           // Remap data to standard header
+           data.forEach(row => {
+             row[req] = row[alt];
+           });
+         } else {
+           allFound = false;
+         }
+       }
+     });
+
+     if (!allFound) {
+       alert(`त्रुटि: फ़ाइल में आवश्यक कॉलम गायब हैं: ${missing.join(', ')}\n\nकृपया पक्का करें कि आपकी फ़ाइल में "Consumer No" और "Consumer Name" कॉलम मौजूद हैं।\n\nउपलब्ध कॉलम: ${headers.slice(0,10).join(', ')}...`);
+       loading.style.display = 'none';
+       return;
+     }
+   }
+
+   if (data.length < 8000) {
+    try {
+      localStorage.setItem('cachedData', JSON.stringify(data));
+    } catch (e) {
+      console.warn('LocalStorage limit exceeded, data not cached.');
+    }
+   }
+
+   uploadMsg.style.display='block';
+   setTimeout(()=>uploadMsg.style.display='none',2500);
+   const fu=el('dropZone'); if(fu)fu.style.display='none';
+   const ru=el('reUploadBtn'); if(ru)ru.style.display='block';
+   el('summaryCards').style.display='grid';
+   initDynamic();
+   initSummaryCards(); // Initialize drag & drop and visibility
+   customFilter=null;
+   applyAll();
+   updateMaxDateMsg();
+   el('reportContainer').style.display='none';
+   el('consumerDataContainer').style.display='none';
+   const sm=el('reportsSubmenu');if(sm)sm.style.display='none';
+   const rh=el('reportHeader');if(rh)rh.textContent='';
+   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  } catch (err) {
+   alert('त्रुटि: ' + (err.message || 'फ़ाइल प्रसंस्करण में समस्या आई।'));
+   console.error(err);
+  } finally {
+   loading.style.display = 'none';
+  }
+ };
+ r.onerror = () => {
+   alert('फ़ाइल पढ़ने में त्रुटि आई।');
+   loading.style.display = 'none';
+ };
+ ext==='csv'?r.readAsText(f):r.readAsArrayBuffer(f);
+}
+
+// Load cached data on startup
+window.addEventListener('DOMContentLoaded', () => {
+  const cached = localStorage.getItem('cachedData');
+  if (cached) {
+    try {
+      data = JSON.parse(cached);
+      if (data && data.length > 0) {
+        el('dropZone').style.display = 'none';
+        const ru=el('reUploadBtn'); if(ru)ru.style.display='block';
+        el('summaryCards').style.display = 'grid';
+        initDynamic();
+        initSummaryCards();
+        applyAll();
+        updateMaxDateMsg();
+      } else {
+        resetToUploadState();
+      }
+    } catch (e) {
+      console.error('Error parsing cached data', e);
+      resetToUploadState();
+    }
+  } else {
+    resetToUploadState();
+  }
+});
+
+function resetToUploadState() {
+  data = [];
+  el('dropZone').style.display = 'block';
+  const ru=el('reUploadBtn'); if(ru)ru.style.display='none';
+  el('summaryCards').style.display = 'none';
+  el('reportContainer').style.display = 'none';
+  el('consumerDataContainer').style.display = 'none';
+  el('requestContainer').style.display = 'none';
+  el('dataUpdateMsg').style.display = 'none';
+  const ac=el('aboutContainer'); if(ac) ac.style.display='block';
+}
+
+const dz=el('dropZone');
+dz.onclick=()=>fileInput.click();
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
+dz.ondragleave=()=>dz.classList.remove('over');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
+
+function updateMaxDateMsg(){
+ if(!data || data.length===0)return;
+ let maxDate = null;
+ data.forEach(x => {
+  ['EKYC Date','LastRefillDate'].forEach(key => {
+   const d = parseDate(x[key]);
+   if(d && (!maxDate || d > maxDate)) maxDate = d;
+  });
+ });
+ if(maxDate){
+  const dd = String(maxDate.getDate()).padStart(2, '0');
+  const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+  const yyyy = maxDate.getFullYear();
+  el('maxUpdateDate').textContent = `${dd}-${mm}-${yyyy}`;
+  el('dataUpdateMsg').style.display = 'block';
+ }
+}
+
+function updateSummaryCards(){
+ const d=filteredData;
+ const now=new Date();
+ const curMonth=now.getMonth(), curYear=now.getFullYear();
+
+ const isUjjwala = x => {
+  const n=(x['Consumer Nature']||'').toLowerCase();
+  return n.includes('ujjwala')||n.includes('pmu')||n.includes('uy');
+ };
+
+ const isCompletedThisMonth = x => {
+  const ed=parseDate(x['EKYC Date']);
+  return ed && ed.getMonth()===curMonth && ed.getFullYear()===curYear && (x['EKYC Status']||'')==='Completed';
+ };
+
+ const isEkycToday = x => {
+  const ed=parseDate(x['EKYC Date']);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return ed && ed.getTime() === today.getTime() && (x['EKYC Status']||'')==='Completed';
+ };
+
+ const isEkycYesterday = x => {
+  const ed=parseDate(x['EKYC Date']);
+  const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  yest.setDate(yest.getDate() - 1);
+  return ed && ed.getTime() === yest.getTime() && (x['EKYC Status']||'')==='Completed';
+ };
+
+ const isDBC = x => {
+     const ct=(x['Connection Type']||'').toLowerCase();
+     return ct.includes('dbc');
+   };
+
+  const fyStart = new Date(2025, 3, 1);
+  const isNilRefillFY = x => {
+    if ((x['EKYC Status'] || '') !== 'Completed') return false;
+    const rd = parseDate(x['LastRefillDate']);
+    return !rd || rd < fyStart;
+  };
+
+  const isSVMonth = x => {
+    const sd = parseDate(x['SV Date']);
+    return sd && sd.getMonth() === curMonth && sd.getFullYear() === curYear;
+  };
+
+  const isSBC = x => {
+    const ct=(x['Connection Type']||'').toLowerCase();
+    return ct.includes('sbc');
+  };
+
+  const isPendingSV = x => {
+    const sd = parseDate(x['SV Date']);
+    const rd = parseDate(x['LastRefillDate']);
+    if (!sd || rd) return false;
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return sd >= sixMonthsAgo;
+  };
+
+  const setCard = (id, val, fn) => {
+    const e = el(id);
+    if (e) {
+      e.textContent = val;
+      if (fn) e.onclick = fn;
+    }
+  };
+
+  setCard('sumTotal', d.length, () => resetFilters());
+  setCard('sumUjjwala', d.filter(isUjjwala).length, () => { resetFilters(); applyAll(isUjjwala); });
+  setCard('sumEkycToday', d.filter(isEkycToday).length, () => { resetFilters(); applyAll(isEkycToday); });
+  setCard('sumEkycYesterday', d.filter(isEkycYesterday).length, () => { resetFilters(); applyAll(isEkycYesterday); });
+  setCard('sumPending', d.filter(x => x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); ekycFilter.value = 'Pending'; applyAll(); });
+  setCard('sumUjjwalaPending', d.filter(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed'); });
+  setCard('sumDBCTotal', d.filter(isDBC).length, () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); });
+  setCard('sumDBCPMUY', d.filter(x => isDBC(x) && isUjjwala(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); });
+  setCard('sumNoMobile', d.filter(x => !x['Mobile No']).length, () => { resetFilters(); mobileStatusFilter.value = 'Unregistered'; applyAll(); });
+  setCard('sumCompletedMonthTotal', d.filter(isCompletedThisMonth).length, () => { resetFilters(); applyAll(isCompletedThisMonth); });
+  setCard('sumCompletedMonthPMUY', d.filter(x => isUjjwala(x) && isCompletedThisMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isCompletedThisMonth(x)); });
+  setCard('sumNilRefillPMUY', d.filter(x => isUjjwala(x) && isNilRefillFY(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isNilRefillFY(x)); });
+  setCard('sumNilRefillTotal', d.filter(isNilRefillFY).length, () => { resetFilters(); applyAll(isNilRefillFY); });
+  setCard('sumNCTC', d.filter(x => (x['PFMSBeneficiaryType'] || '') === 'NCTC').length, () => { resetFilters(); pfmsFilter.value = 'NCTC'; applyAll(); });
+  setCard('sumSVMonth', d.filter(isSVMonth).length, () => { resetFilters(); applyAll(isSVMonth); });
+  setCard('sumUjjwalaSVMonth', d.filter(x => isUjjwala(x) && isSVMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSVMonth(x)); });
+
+  const totalEkyc = d.filter(x => x['EKYC Status'] === 'Completed').length;
+  const totalPmuy = d.filter(isUjjwala).length;
+  const pmuyEkyc = d.filter(x => isUjjwala(x) && x['EKYC Status'] === 'Completed').length;
+  const sbcPmuy = d.filter(x => isUjjwala(x) && isSBC(x)).length;
+  const sbcTotal = d.filter(isSBC).length;
+  const pmuyDbc = d.filter(x => isUjjwala(x) && isDBC(x)).length;
+  const dbcTotal = d.filter(isDBC).length;
+  const pendingSvTotal = d.filter(isPendingSV).length;
+  const pendingSvPmuy = d.filter(x => isUjjwala(x) && isPendingSV(x)).length;
+
+  setCard('sumTotalEkycPct', (d.length > 0 ? (totalEkyc / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); ekycFilter.value = 'Completed'; applyAll(); });
+  setCard('sumPmuyEkycPct', (totalPmuy > 0 ? (pmuyEkyc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] === 'Completed'); });
+  setCard('sumTodayEkycPMUY', d.filter(x => isUjjwala(x) && isEkycToday(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isEkycToday(x)); });
+  setCard('sumSbcConsumerPMUY', sbcPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSBC(x)); });
+  setCard('sumSbcConsumerTotal', sbcTotal, () => { resetFilters(); connectionTypeFilter.value = 'SBC'; applyAll(); });
+  setCard('sumPmuyDbcPct', (totalPmuy > 0 ? (pmuyDbc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); });
+  setCard('sumTotalDbcPct', (d.length > 0 ? (dbcTotal / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); });
+  setCard('sumPendingSvTotal', pendingSvTotal, () => { resetFilters(); applyAll(isPendingSV); });
+  setCard('sumPendingSvPMUY', pendingSvPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isPendingSV(x)); });
+}
+
+function copyToClipboard(text,btn){
+ navigator.clipboard.writeText(text).then(()=>{
+  const old=btn.textContent;
+  btn.textContent='Copied!';
+  setTimeout(()=>btn.textContent=old,1500);
+ });
+}
+
+function initDynamic(){allColumns=Object.keys(data[0]||{});addColumn.innerHTML='<option value="">Add column</option>'+allColumns.sort().map(c=>`<option>${c}</option>`).join('');removeColumn.innerHTML='<option value="">Remove column</option>'+visibleCols.map(c=>`<option>${c}</option>`).join('');sortBy.innerHTML='<option value="">Sort By</option>'+allColumns.sort().map(c=>`<option>${c}</option>`).join('');}
+
+function updateFilterOptions(d){
+ const currE=ekycFilter.value,currA=areaFilter.value,currN=natureFilter.value,currM=mobileStatusFilter.value,currCS=consumerStatusFilter.value,currCT=connectionTypeFilter.value,currPF=pfmsFilter.value;
+ const e=new Set(),a=new Set(),n=new Set(),cs=new Set(),ct=new Set(),pf=new Set();let hR=false,hU=false;
+ d.forEach(x=>{if(x['EKYC Status'])e.add(x['EKYC Status']);if(x['Delivery Area'])a.add(x['Delivery Area']);if(x['Consumer Nature'])n.add(x['Consumer Nature']);if(x['Consumer Status'])cs.add(x['Consumer Status']);if(x['Connection Type'])ct.add(x['Connection Type']);if(x['PFMSBeneficiaryType'])pf.add(x['PFMSBeneficiaryType']);if(x['Mobile No'])hR=true;else hU=true;});
+ 
+ const b=(el,s,c,l)=>{
+  el.innerHTML=`<option value="">${l}</option>`+[...s].sort().map(x=>`<option>${x}</option>`).join('');
+  el.value=s.has(c)?c:'';
+ };
+ 
+ b(ekycFilter,e,currE,'All eKYC');
+ b(areaFilter,a,currA,'All Areas');
+ b(natureFilter,n,currN,'All Nature');
+ b(consumerStatusFilter,cs,currCS,'All Consumer Status');
+ b(connectionTypeFilter,ct,currCT,'All Connection Type');
+ b(pfmsFilter,pf,currPF,'All Beneficiary Type');
+ 
+ mobileStatusFilter.innerHTML='<option value="">All Mobile Status</option>'+(hR?'<option>Registered</option>':'')+(hU?'<option>Unregistered</option>':'');
+ mobileStatusFilter.value=(currM==='Registered'&&hR)||(currM==='Unregistered'&&hU)?currM:'';
+}
+
+function applyAll(custom){
+ let f=[...data];
+ if(custom)customFilter=custom;
+ if(customFilter || ekycFilter.value || areaFilter.value || natureFilter.value || consumerStatusFilter.value || connectionTypeFilter.value || pfmsFilter.value || mobileStatusFilter.value || tableSearch.value || refillFrom.value || refillTo.value || ekycFrom.value || ekycTo.value) {
+  const ac=document.getElementById('aboutContainer'); if(ac) ac.style.display='none';
+  el('consumerDataContainer').style.display='block';
+ }
+ if(ekycFilter.value)f=f.filter(d=>d['EKYC Status']===ekycFilter.value);if(areaFilter.value)f=f.filter(d=>d['Delivery Area']===areaFilter.value);if(natureFilter.value)f=f.filter(d=>d['Consumer Nature']===natureFilter.value);if(consumerStatusFilter.value)f=f.filter(d=>(d['Consumer Status']||'')===consumerStatusFilter.value);if(connectionTypeFilter.value)f=f.filter(d=>(d['Connection Type']||'')===connectionTypeFilter.value);if(pfmsFilter.value)f=f.filter(d=>(d['PFMSBeneficiaryType']||'')===pfmsFilter.value);if(mobileStatusFilter.value==='Registered')f=f.filter(d=>d['Mobile No']);if(mobileStatusFilter.value==='Unregistered')f=f.filter(d=>!d['Mobile No']);const rf=parseInputDate(refillFrom.value),rt=parseInputDate(refillTo.value);if(rf||rt){f=f.filter(d=>{const ld=parseDate(d['LastRefillDate']);if(!ld)return false;return (!rf||ld>=rf)&&(!rt||ld<=rt)})}const ef=parseInputDate(ekycFrom.value),et=parseInputDate(ekycTo.value);if(ef||et){f=f.filter(d=>{const ed=parseDate(d['EKYC Date']);if(!ed)return false;return (!ef||ed>=ef)&&(!et||ed<=et)})}if(customFilter)f=f.filter(customFilter);if(tableSearch.value){const q=tableSearch.value.toLowerCase();f=f.filter(o=>Object.values(o).some(v=>String(v).toLowerCase().includes(q)))}if(sortBy.value){f.sort((a,b)=>{const A=(a[sortBy.value]||'').toString();const B=(b[sortBy.value]||'').toString();return sortOrder.value==='asc'?A.localeCompare(B,undefined,{numeric:true}):B.localeCompare(A,undefined,{numeric:true})})}filteredData=f;updateFilterOptions(filteredData);updateSummaryCards();currentPage=1;renderPage();renderReports();}
+
+[ekycFilter,areaFilter,natureFilter,consumerStatusFilter,connectionTypeFilter,pfmsFilter,mobileStatusFilter,sortBy,sortOrder,refillFrom,refillTo,ekycFrom,ekycTo].forEach(x=>x.onchange=()=>applyAll());tableSearch.oninput=()=>applyAll();
+viewBtn.onclick=()=>{const no=consumerSearch.value.trim();if(!no)return alert('Enter Consumer No');openBook(no)};
+resetBtn.onclick=()=>{
+ ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';mobileStatusFilter.value='';sortBy.value='';sortOrder.value='asc';consumerSearch.value='';tableSearch.value='';
+ refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
+ el('reportContainer').style.display='none';
+ el('consumerDataContainer').style.display='none';
+ el('requestContainer').style.display='none';
+ const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='block';
+  el('bookView').innerHTML='';
+  uploadMsg.style.display='none';
+  flashEKYC.style.display='none';
+  flashMobile.style.display='none';
+  document.querySelectorAll('.nav-item').forEach(b=>{
+    b.classList.remove('active');
+    if(b.textContent==='About') b.classList.add('active');
+  });
+ document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');
+ customFilter=null;
+ applyAll();
+};
+requestSend.onclick=()=>{const num=(requestMobile&&requestMobile.value||'').trim();const type=(requestType&&requestType.value)||'eKYC';const url=buildRequestWhatsAppLink(num,type);if(!url)return alert('Valid mobile number दर्ज करें');window.open(url,'_blank')};
+
+toggleCardsBtn.onclick=()=>{
+  const sc = el('summaryCards');
+  if(sc.style.display === 'none') {
+    sc.style.display = 'grid';
+    toggleCardsBtn.textContent = 'कार्ड छुपाएं';
+  } else {
+    sc.style.display = 'none';
+    toggleCardsBtn.textContent = 'कार्ड दिखाएं';
+  }
+};
+
+lockBtn.onclick=()=>{
+  if(!confirm('Dashboard को Lock करें?')) return;
+  toggleLock(true);
+};
+unlockBtn.onclick=()=>{
+  const modal = el('pinModal');
+  const input = el('pinInput');
+  input.value = '';
+  modal.style.display = 'flex';
+  input.focus();
+};
+
+el('cancelPin').onclick=()=>{
+  el('pinModal').style.display = 'none';
+};
+
+el('submitPin').onclick=()=>{
+  const pin = el('pinInput').value;
+  const savedPin = localStorage.getItem('dashboard-pin') || '1234';
+  if(pin === savedPin) {
+    el('pinModal').style.display = 'none';
+    toggleLock(false);
+  } else {
+    alert('गलत PIN!');
+    el('pinInput').value = '';
+    el('pinInput').focus();
+  }
+};
+
+// Forgot PIN logic
+el('forgotPinBtn').onclick = () => {
+  const modal = el('recoveryModal');
+  const setupView = el('setupView');
+  const recoverView = el('recoverView');
+  const title = el('recoveryTitle');
+  
+  const savedQuestion = localStorage.getItem('security-question');
+  
+  if (savedQuestion) {
+    title.textContent = 'PIN रिकवरी';
+    setupView.style.display = 'none';
+    recoverView.style.display = 'block';
+    el('displayQuestion').textContent = el('securityQuestion').options[Array.from(el('securityQuestion').options).findIndex(o => o.value === savedQuestion)].text;
+  } else {
+    title.textContent = 'Security Setup';
+    setupView.style.display = 'block';
+    recoverView.style.display = 'none';
+  }
+  
+  modal.style.display = 'flex';
+};
+
+el('saveRecovery').onclick = () => {
+  const q = el('securityQuestion').value;
+  const a = el('securityAnswer').value.trim().toLowerCase();
+  
+  if (!a) return alert('कृपया उत्तर दर्ज करें');
+  
+  localStorage.setItem('security-question', q);
+  localStorage.setItem('security-answer', a);
+  alert('सुरक्षा प्रश्न सफलतापूर्वक सहेजा गया!');
+  el('recoveryModal').style.display = 'none';
+};
+
+el('verifyRecovery').onclick = () => {
+  const a = el('checkAnswer').value.trim().toLowerCase();
+  const savedAnswer = localStorage.getItem('security-answer');
+  if (a === savedAnswer) {
+    const newPin = prompt('नया 4-अंकों का PIN दर्ज करें:', '1234');
+    if (newPin && newPin.length === 4 && !isNaN(newPin)) {
+      localStorage.setItem('dashboard-pin', newPin);
+      alert('PIN सफलतापूर्वक बदल दिया गया है!');
+      el('recoveryModal').style.display = 'none';
+      el('pinInput').value = '';
+      el('pinInput').focus();
+    } else {
+      alert('कृपया वैध 4-अंकों का PIN दर्ज करें');
+    }
+  } else {
+    alert('गलत उत्तर!');
+  }
+};
+
+el('closeRecovery').onclick = () => {
+  el('recoveryModal').style.display = 'none';
+};
+
+el('pinInput').onkeydown=(e)=>{
+  if(e.key === 'Enter') el('submitPin').click();
+  if(e.key === 'Escape') el('cancelPin').click();
+};
+
+let isDashboardLocked = false;
+let lastActivityTime = Date.now();
+const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
+
+function resetActivityTimer() {
+  if (!isDashboardLocked) {
+    lastActivityTime = Date.now();
+  }
+}
+
+// Track user activity
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+  window.addEventListener(evt, resetActivityTimer, true);
+});
+
+// Check for inactivity and update timer every second
+setInterval(() => {
+  if (!isDashboardLocked) {
+    const elapsed = Date.now() - lastActivityTime;
+    const remaining = Math.max(0, INACTIVITY_LIMIT - elapsed);
+    
+    if (remaining <= 0) {
+      autoLockDashboard();
+    } else {
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      el('idleTimer').textContent = `ऑटो-लॉक: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      el('idleTimer').style.display = 'inline-block';
+    }
+  } else {
+    el('idleTimer').style.display = 'none';
+  }
+}, 1000);
+
+function autoLockDashboard() {
+  toggleLock(true);
+  const modal = el('pinModal');
+  const input = el('pinInput');
+  input.value = '';
+  modal.style.display = 'flex';
+  input.focus();
+}
+
+function toggleLock(isLocked) {
+  isDashboardLocked = isLocked;
+  if (!isLocked) lastActivityTime = Date.now(); // Reset timer on unlock
+  const inputs = [fileInput, consumerSearch, viewBtn, resetBtn, toggleCardsBtn, tableSearch, ekycFilter, areaFilter, natureFilter, mobileStatusFilter, consumerStatusFilter, connectionTypeFilter, pfmsFilter, refillFrom, refillTo, ekycFrom, ekycTo, sortBy, sortOrder, addColumn, removeColumn, requestMobile, requestType, requestSend];
+  inputs.forEach(i => { if(i) i.disabled = isLocked; });
+  const navbar = document.querySelector('.navbar');
+  if(navbar) navbar.style.pointerEvents = isLocked ? 'none' : 'auto';
+  if(navbar) navbar.style.opacity = isLocked ? '0.6' : '1';
+  lockBtn.style.display = isLocked ? 'none' : 'inline-block';
+  unlockBtn.style.display = isLocked ? 'inline-block' : 'none';
+}
+
+function resetFilters(){
+ ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';mobileStatusFilter.value='';
+ refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
+ sortBy.value='';sortOrder.value='asc';
+ customFilter=null;
+ applyAll();
+ el('consumerDataContainer').style.display='none';
+ showAbout();
+}
+
+function renderPage(){const t=Math.ceil(filteredData.length/pageSize)||1;totalPagesSpan.textContent=t;pageInput.value=currentPage;el('recordCount').textContent=filteredData.length;renderTable(filteredData.slice((currentPage-1)*pageSize,currentPage*pageSize))}
+prevPage.onclick=()=>{if(currentPage>1){currentPage--;renderPage()}};
+nextPage.onclick=()=>{const t=Math.ceil(filteredData.length/pageSize)||1;if(currentPage<t){currentPage++;renderPage()}};
+
+function formatWhatsAppPhone(m){
+ const d=String(m||'').replace(/\D/g,'');
+ if(!d)return null;
+ if(d.startsWith('91')&&d.length>=12)return d.slice(0,12);
+ if(d.length===11&&d.startsWith('0'))return '91'+d.slice(1);
+ if(d.length>12){const last10=d.slice(-10);if(/^\d{10}$/.test(last10))return '91'+last10;}
+ if(d.length===10)return '91'+d;
+ return null
+}
+function buildRequestWhatsAppLink(number,type){const p=formatWhatsAppPhone(number);if(!p)return null;let msg='';if(type==='eKYC'){msg=`प्रिय उपभोक्ता, 
+ आपसे अनुरोध है कि आप अपना LPG eKYC शीघ्रता से पूरा कराएँ। 
+ eKYC नहीं होने की स्थिति में गैस आपूर्ति एवं अन्य सेवाओं में बाधा आ सकती है। 
+  eKYC कराने के विकल्प: 
+ 👉 हमारे कार्यालय में आकर 
+ 👉 डिलीवरीमैन के माध्यम से 
+ 
+ स्वयं मोबाइल से eKYC करने की प्रक्रिया: 
+  1️⃣ Play Store / App Store से नीचे दिए गए ऐप डाउनलोड करें: 
+  HP Pay App 
+  Aadhaar Face RD App 
+  2️⃣ HP Pay App खोलें और अपने रजिस्टर्ड मोबाइल नंबर से रजिस्टर / लॉग-इन करें। 
+  3️⃣ ऐप में LPG Section → eKYC विकल्प चुनें। 
+  4️⃣ निर्देशानुसार चेहरा स्कैन (Face Authentication) करें और प्रक्रिया पूरी करें। 
+ 
+ उपयोगी लिंक: 
+  👉 HP Pay App: 
+ https://play.google.com/store/apps/details?id=com.drivetrackplusrefuel 
+  👉 Aadhaar Face RD App: 
+ https://play.google.com/store/apps/details?id=in.gov.uidai.facerd 
+  👉 eKYC वीडियो मार्गदर्शन: 
+ https://pmuy.gov.in/e-kyc.html 
+ 
+ कृपया जल्द से जल्द eKYC पूर्ण कराएँ ताकि आपकी LPG सेवा निर्बाध रूप से चलती रहे।`;}else if(type==='DBC'){msg='प्रिय उपभोक्ता\nआपका Connection Type SBC है। कृपया अपना कनेक्शन double (DBC) कराएं ताकि गैस उपलब्धता और सुविधा बढ़े।\nइस प्रक्रिया के लिए अपने डिस्ट्रीब्यूटर के ऑफिस पर संपर्क करें और आवश्यक दस्तावेज साथ लें।'}else{msg='प्रिय उपभोक्ता\nसब्सिडी प्राप्त करने के लिए कृपया अपना आधार बैंक अकाउंट से NPCI में लिंक कराएं (Aadhaar seeding/mapper update)।\nइसके लिए अपने बैंक शाखा/CSC केंद्र पर संपर्क करें और आधार-बैंक लिंकिंग अपडेट कराएं।'}return `https://wa.me/${p}?text=${encodeURIComponent(msg)}`}
+function buildWhatsAppLink(o){if((o['Consumer Nature']||'')==='2 - Non Domestic Exempted')return '';if((o['EKYC Status']||'')==='Completed')return '';const p=formatWhatsAppPhone(o['Mobile No']);if(!p)return '';const addr=(o['Consumer Address']||o['Address']||'');
+const msg=`प्रिय उपभोक्ता श्री ${o['Consumer Name']||''} जी, 
+उपभोक्ता संख्या: ${o['Consumer No']||''} 
+पता: ${addr} 
+ आपसे अनुरोध है कि आप अपना LPG eKYC शीघ्रता से पूरा कराएँ। 
+ eKYC नहीं होने की स्थिति में गैस आपूर्ति एवं अन्य सेवाओं में बाधा आ सकती है। 
+  eKYC कराने के विकल्प: 
+ 👉 हमारे कार्यालय में आकर 
+ 👉 डिलीवरीमैन के माध्यम से 
+ 
+ स्वयं मोबाइल से eKYC करने की प्रक्रिया: 
+  1️⃣ Play Store / App Store से नीचे दिए गए ऐप डाउनलोड करें: 
+  HP Pay App 
+  Aadhaar Face RD App 
+  2️⃣ HP Pay App खोलें और अपने रजिस्टर्ड मोबाइल नंबर (${o['Mobile No']||''}) से रजिस्टर / लॉग-इन करें। 
+  3️⃣ ऐप में LPG Section → eKYC विकल्प चुनें। 
+  4️⃣ निर्देशानुसार चेहरा स्कैन (Face Authentication) करें और प्रक्रिया पूरी करें। 
+  उपयोगी लिंक: 
+  👉 HP Pay App: 
+ https://play.google.com/store/apps/details?id=com.drivetrackplusrefuel 
+  👉 Aadhaar Face RD App: 
+ https://play.google.com/store/apps/details?id=in.gov.uidai.facerd 
+  👉 eKYC वीडियो मार्गदर्शन: 
+ https://pmuy.gov.in/e-kyc.html 
+ 
+ कृपया जल्द से जल्द eKYC पूर्ण कराएँ ताकि आपकी LPG सेवा निर्बाध रूप से चलती रहे।`;
+const url=`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;return `<a class="wa-btn" href="${url}" target="_blank" rel="noopener">WhatsApp</a>`}
+function buildWhatsAppLinkLabeled(o,label){if((o['Consumer Nature']||'')==='2 - Non Domestic Exempted')return '';if((o['EKYC Status']||'')==='Completed')return '';const p=formatWhatsAppPhone(o['Mobile No']);if(!p)return '';const addr=(o['Consumer Address']||o['Address']||'');
+const msg=`प्रिय उपभोक्ता श्री ${o['Consumer Name']||''} जी, 
+उपभोक्ता संख्या: ${o['Consumer No']||''} 
+पता: ${addr} 
+ आपसे अनुरोध है कि आप अपना LPG eKYC शीघ्रता से पूरा कराएँ। 
+ eKYC नहीं होने की स्थिति में गैस आपूर्ति एवं अन्य सेवाओं में बाधा आ सकती है। 
+ 
+ eKYC कराने के विकल्प: 
+ 👉 हमारे कार्यालय में आकर 
+ 👉 डिलीवरीमैन के माध्यम से 
+ 
+ स्वयं मोबाइल से eKYC करने की प्रक्रिया: 
+  1️⃣ Play Store / App Store से नीचे दिए गए ऐप डाउनलोड करें: 
+  HP Pay App 
+  Aadhaar Face RD App 
+  2️⃣ HP Pay App खोलें और अपने रजिस्टर्ड मोबाइल नंबर (${o['Mobile No']||''}) से रजिस्टर / लॉग-इन करें। 
+  3️⃣ ऐप में LPG Section → eKYC विकल्प चुनें। 
+  4️⃣ निर्देशानुसार चेहरा स्कैन (Face Authentication) करें और प्रक्रिया पूरी करें। 
+ 
+ उपयोगी लिंक: 
+  👉 HP Pay App: 
+ https://play.google.com/store/apps/details?id=com.drivetrackplusrefuel 
+  👉 Aadhaar Face RD App: 
+ https://play.google.com/store/apps/details?id=in.gov.uidai.facerd 
+  👉 eKYC वीडियो मार्गदर्शन: 
+ https://pmuy.gov.in/e-kyc.html 
+ 
+ कृपया जल्द से जल्द eKYC पूर्ण कराएँ ताकि आपकी LPG सेवा निर्बाध रूप से चलती रहे।`;
+const url=`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;return `<a class="wa-btn" href="${url}" target="_blank" rel="noopener">${label||'WhatsApp'}</a>`}
+function buildWhatsAppLinkForNumber(number,o){if((o['Consumer Nature']||'')==='2 - Non Domestic Exempted')return '';const p=formatWhatsAppPhone(number);if(!p)return '';const addr=(o['Consumer Address']||o['Address']||'');
+const msg=`प्रिय उपभोक्ता श्री ${o['Consumer Name']||''} जी, 
+उपभोक्ता संख्या: ${o['Consumer No']||''} 
+पता: ${addr} 
+ आपसे अनुरोध है कि आप अपना LPG eKYC शीघ्रता से पूरा कराएँ। 
+ eKYC नहीं होने की स्थिति में गैस आपूर्ति एवं अन्य सेवाओं में बाधा आ सकती है। 
+ eKYC कराने के विकल्प: 
+ 👉 हमारे कार्यालय में आकर 
+ 👉 डिलीवरीमैन के माध्यम से 
+ 
+ स्वयं मोबाइल से eKYC करने की प्रक्रिया: 
+  1️⃣ Play Store / App Store से नीचे दिए गए ऐप डाउनलोड करें: 
+  HP Pay App 
+  Aadhaar Face RD App 
+  2️⃣ HP Pay App खोलें और अपने रजिस्टर्ड मोबाइल नंबर (${o['Mobile No']||''}) से रजिस्टर / लॉग-इन करें। 
+  3️⃣ ऐप में LPG Section → eKYC विकल्प चुनें। 
+  4️⃣ निर्देशानुसार चेहरा स्कैन (Face Authentication) करें और प्रक्रिया पूरी करें। 
+ 
+ उपयोगी लिंक: 
+  👉 HP Pay App: 
+ https://play.google.com/store/apps/details?id=com.drivetrackplusrefuel 
+  👉 Aadhaar Face RD App: 
+ https://play.google.com/store/apps/details?id=in.gov.uidai.facerd 
+  👉 eKYC वीडियो मार्गदर्शन: 
+ https://pmuy.gov.in/e-kyc.html 
+ 
+ कृपया जल्द से जल्द eKYC पूर्ण कराएँ ताकि आपकी LPG सेवा निर्बाध रूप से चलती रहे।`;
+const url=`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;return `<a class="wa-btn" href="${url}" target="_blank" rel="noopener">WhatsApp</a>`}
+function buildWhatsAppLinkSBC(o){if((o['Consumer Nature']||'')==='2 - Non Domestic Exempted')return '';const ct=(o['Connection Type']||'').toLowerCase();if(!ct.includes('sbc'))return '';let p=formatWhatsAppPhone(o['Mobile No']);if(!p){const iv2=String(o['IVRS No.2']||'').replace(/['"\s]/g,'');p=formatWhatsAppPhone(iv2);}if(!p)return '';const addr=(o['Consumer Address']||o['Address']||'');
+const msg=`प्रिय उपभोक्ता श्री ${o['Consumer Name']||''} जी, 
+उपभोक्ता संख्या: ${o['Consumer No']||''} 
+पता: ${addr} 
+
+आपका LPG कनेक्शन वर्तमान में Single Bottle Connection (SBC) है। 
+आपकी सुविधा और निरंतर गैस उपलब्धता के लिए हम आपको Double Bottle Connection (DBC) कराने की सलाह देते हैं। 
+DBC के प्रमुख लाभ: 
+✅ गैस खत्म होने की चिंता नहीं 
+✅ सिलेंडर बुकिंग में देरी से परेशानी नहीं 
+✅ त्योहारों / मेहमानों के समय अतिरिक्त सुविधा 
+✅ रसोई का काम बिना रुकावट 
+
+👉 DBC कराने के लिए कृपया शीघ्र अपने वितरक (Distributor) कार्यालय में संपर्क करें और आवश्यक दस्तावेज साथ लाएँ। 
+यह सुविधा आपके और आपके परिवार के लिए अधिक सुरक्षित, सुविधाजनक और उपयोगी है। 
+
+आज ही DBC कराएँ और बिना रुकावट गैस सुविधा का लाभ उठाएँ।`;
+const url=`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;return `<a class="wa-btn" href="${url}" target="_blank" rel="noopener">WhatsApp</a>`}
+function buildWhatsAppLinkNCTC(o){if((o['Consumer Nature']||'')==='2 - Non Domestic Exempted')return '';if((o['PFMSBeneficiaryType']||'')!=='NCTC')return '';let p=formatWhatsAppPhone(o['Mobile No']);if(!p){const iv2=String(o['IVRS No.2']||'').replace(/['"\s]/g,'');p=formatWhatsAppPhone(iv2);}if(!p)return '';const addr=(o['Consumer Address']||o['Address']||'');
+const msg=`प्रिय उपभोक्ता श्री/श्रीमती ${o['Consumer Name']||''} जी, 
+उपभोक्ता संख्या: ${o['Consumer No']||''} 
+पता: ${addr} 
+आपको LPG सब्सिडी का लाभ प्राप्त करने के लिए यह आवश्यक है कि आपका आधार आपके बैंक खाते से NPCI में लिंक (Aadhaar Seeding / Mapper Update) हो। 
+👉 यदि आधार-बैंक-NPCI लिंक नहीं है, तो सब्सिडी खाते में नहीं आती है। 
+इसलिए कृपया शीघ्र अपने बैंक शाखा या नजदीकी CSC केंद्र पर जाकर Aadhaar–Bank Linking / NPCI Mapper Update करवा लें। 
+ध्यान रखें: 
+✅ आधार कार्ड साथ ले जाएँ 
+✅ बैंक खाता उसी नाम से सक्रिय हो 
+✅ मोबाइल नंबर चालू हो 
+आज ही अपडेट कराएँ और LPG सब्सिडी बिना किसी रुकावट के प्राप्त करें।`;
+const url=`https://wa.me/${p}?text=${encodeURIComponent(msg)}`;return `<a class="wa-btn" href="${url}" target="_blank" rel="noopener">WhatsApp</a>`}
+function renderTable(r){
+ dataTable.innerHTML =
+  '<tr>' + visibleCols.map(c=>`<th>${c}</th>`).join('') + '</tr>' +
+  r.map(o => {
+   const isPending=(o['EKYC Status']||'')!=='Completed';
+   return `<tr class="${isPending?'highlight':''}">` + visibleCols.map(c => {
+    const val=o[c]||'';
+    if(c==='Consumer No'){
+      return `<td><span class="consumer-link" onclick="openBook('${val}')">${val}</span> <button class="copy-btn" onclick="copyToClipboard('${val}',this)">Copy</button>${buildWhatsAppLink(o)}</td>`;
+    }
+    if((c==='IVRS No.2' || c==='IVRS No.3' || c==='IVRS No.4') && (o['EKYC Status']||'')!=='Completed'){
+      const raw=val.toString();
+      const cleaned=raw.replace(/['"\s]/g,'');
+      return `<td>${val}${cleaned?buildWhatsAppLinkForNumber(cleaned,o):''}</td>`;
+    }
+    return `<td>${val}</td>`;
+   }).join('') + '</tr>';
+  }).join('');
+}
+
+addColumn.onchange=function(){if(this.value&&!visibleCols.includes(this.value)){visibleCols.push(this.value);this.value='';removeColumn.innerHTML='<option value="">Remove column</option>'+visibleCols.map(c=>`<option>${c}</option>`).join('');renderPage()}};
+removeColumn.onchange=function(){visibleCols=visibleCols.filter(c=>c!==this.value);this.value='';removeColumn.innerHTML='<option value="">Remove column</option>'+visibleCols.map(c=>`<option>${c}</option>`).join('');renderPage()};
+
+function reportFilter(fn){
+ applyAll(fn);
+ el('consumerDataContainer').style.display='block';
+ document.getElementById('dataTable').scrollIntoView({behavior:'smooth'})
+}
+
+function parseDate(val){
+  if(!val) return null;
+  const p = val.split(/[-/,]/);
+  if(p.length < 3) return null;
+  // Handle both DD-MM-YYYY and YYYY-MM-DD
+  let d, m, y;
+  if (p[0].length === 4) {
+    y = +p[0]; m = +p[1]; d = +p[2];
+  } else {
+    d = +p[0]; m = +p[1]; y = +p[2];
+  }
+  const date = new Date(y, m - 1, d);
+  return isNaN(date) ? null : date;
+}
+
+function renderReports(){
+ const natureMap={},mobileMap={},refillMap={},completedMap={},areaMap={},nilRefillMap={},svMap={},sbcDbcMap={},pendingEkycMap={},beneficiaryTypeMap={},bookingSourceMap={},areaEkycProgressMap={},refillBucketMap={},bookingSourceCompletionMap={},trendMap={},dq={invalidDates:0,missingMobile:0,missingRefill:0,dupMobile:{}};
+ const now=new Date();
+ let totalNature={t:0,c:0,p:0},totalMobile={reg:0,unreg:0},totalRefill={pending:0,cm:0,lm:0,fy:0},totalCompleted={today:0,yest:0,month:0,fy:0},totalNilRefill={completed:0,pending:0},totalSV={today:0,yest:0,month:0,fy:0,old:0},totalSbcDbc={sbc:0,dbc:0},totalPendingEkyc={sbc:0,dbc:0,registered:0,unregistered:0},totalBeneficiaryType={},totalBookingSource={},totalAreaProgress={},totalRefillBuckets={d30:0,d60:0,d90:0,d90p:0},totalBSCompletion={};
+
+ filteredData.forEach(d=>{
+  const n=d['Consumer Nature']||'Unknown';
+  const ekyc=d['EKYC Status'];
+  const rDate=parseDate(d['LastRefillDate']);
+  const kDate=parseDate(d['EKYC Date']);
+  const svDate=parseDate(d['SV Date']);
+  if(!d['Mobile No']) dq.missingMobile++;
+  if(!rDate) dq.missingRefill++;
+  if(d['LastRefillDate'] && !rDate) dq.invalidDates++;
+  const mNo=d['Mobile No']||'';
+  if(mNo){dq.dupMobile[mNo]=(dq.dupMobile[mNo]||0)+1}
+
+  natureMap[n]=natureMap[n]||{t:0,c:0,p:0};
+  mobileMap[n]=mobileMap[n]||{reg:0,unreg:0};
+  refillMap[n]=refillMap[n]||{pending:0,cm:0,lm:0,fy:0};
+  completedMap[n]=completedMap[n]||{today:0,yest:0,month:0,fy:0};
+  nilRefillMap[n]=nilRefillMap[n]||{completed:0,pending:0};
+  svMap[n]=svMap[n]||{today:0,yest:0,month:0,fy:0,old:0};
+  sbcDbcMap[n]=sbcDbcMap[n]||{sbc:0,dbc:0};
+  pendingEkycMap[n]=pendingEkycMap[n]||{sbc:0,dbc:0,registered:0,unregistered:0};
+  beneficiaryTypeMap[n]=beneficiaryTypeMap[n]||{};
+  areaMap[n]=areaMap[n]||{};
+
+  natureMap[n].t++; totalNature.t++;
+  ekyc==='Completed'? (natureMap[n].c++,totalNature.c++):(natureMap[n].p++,totalNature.p++);
+
+  d['Mobile No']? (mobileMap[n].reg++,totalMobile.reg++):(mobileMap[n].unreg++,totalMobile.unreg++);
+
+  if(ekyc!=='Completed'){
+   refillMap[n].pending++; totalRefill.pending++;
+   if(rDate){
+    if(rDate.getMonth()===now.getMonth()&&rDate.getFullYear()===now.getFullYear()){refillMap[n].cm++;totalRefill.cm++;}
+    const lm=new Date(now.getFullYear(),now.getMonth()-1,1);
+    if(rDate.getMonth()===lm.getMonth()&&rDate.getFullYear()===lm.getFullYear()){refillMap[n].lm++;totalRefill.lm++;}
+    const fyStart=(now.getMonth()>=3)?new Date(now.getFullYear(),3,1):new Date(now.getFullYear()-1,3,1);
+    const fyEnd=(now.getMonth()>=3)?new Date(now.getFullYear()+1,2,31):new Date(now.getFullYear(),2,31);
+    if(rDate>=fyStart&&rDate<=fyEnd){refillMap[n].fy++;totalRefill.fy++;}
+   }
+  }
+
+  if(kDate && ekyc==='Completed'){
+   const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+   const yest=new Date(today);yest.setDate(yest.getDate()-1);
+   if(kDate.getTime()===today.getTime()){completedMap[n].today++;totalCompleted.today++;}
+   if(kDate.getTime()===yest.getTime()){completedMap[n].yest++;totalCompleted.yest++;}
+   if(kDate.getMonth()===now.getMonth()&&kDate.getFullYear()===now.getFullYear()){completedMap[n].month++;totalCompleted.month++;}
+   const fyStart=(now.getMonth()>=3)?new Date(now.getFullYear(),3,1):new Date(now.getFullYear()-1,3,1);
+   const fyEnd=(now.getMonth()>=3)?new Date(now.getFullYear()+1,2,31):new Date(now.getFullYear(),2,31);
+   if(kDate>=fyStart&&kDate<=fyEnd){completedMap[n].fy++;totalCompleted.fy++;}
+   
+   // Trend Data
+   const dStr = kDate.getFullYear() + '-' + String(kDate.getMonth() + 1).padStart(2, '0') + '-' + String(kDate.getDate()).padStart(2, '0');
+   trendMap[dStr] = (trendMap[dStr] || 0) + 1;
+  }
+
+  // Nil Refill Report: eKYC Completed + LastRefillDate before 01.04.2025 or blank
+  if(ekyc==='Completed'){
+   const fyStart=new Date(2025,3,1); // 01.04.2025
+   if(!rDate || rDate<fyStart){
+    nilRefillMap[n].completed++;
+    totalNilRefill.completed++;
+   }
+  }
+  
+  // Nil Refill Report: eKYC Pending + LastRefillDate before 01.04.2025 or blank
+  if(ekyc!=='Completed'){
+   const fyStart=new Date(2025,3,1); // 01.04.2025
+   if(!rDate || rDate<fyStart){
+    nilRefillMap[n].pending++;
+    totalNilRefill.pending++;
+   }
+  }
+
+  // SV Report: SV Date wise breakdown
+  if(svDate){
+   const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+   const yest=new Date(today);yest.setDate(yest.getDate()-1);
+   const fyStart=(now.getMonth()>=3)?new Date(now.getFullYear(),3,1):new Date(now.getFullYear()-1,3,1);
+   const fyEnd=(now.getMonth()>=3)?new Date(now.getFullYear()+1,2,31):new Date(now.getFullYear(),2,31);
+   
+   if(svDate.getTime()===today.getTime()){svMap[n].today++;totalSV.today++;}
+   else if(svDate.getTime()===yest.getTime()){svMap[n].yest++;totalSV.yest++;}
+   else if(svDate.getMonth()===now.getMonth()&&svDate.getFullYear()===now.getFullYear()){svMap[n].month++;totalSV.month++;}
+   else if(svDate>=fyStart&&svDate<=fyEnd){svMap[n].fy++;totalSV.fy++;}
+   else if(svDate<fyStart){svMap[n].old++;totalSV.old++;}
+  }
+
+  // SBC DBC Report: Connection Type wise breakdown
+  const connType=d['Connection Type']||'Unknown';
+  if(connType.toLowerCase()==='sbc'||connType.toLowerCase().includes('sbc')){
+   sbcDbcMap[n].sbc++;
+   totalSbcDbc.sbc++;
+  }else if(connType.toLowerCase()==='dbc'||connType.toLowerCase().includes('dbc')){
+   sbcDbcMap[n].dbc++;
+   totalSbcDbc.dbc++;
+  }
+
+  // Pending eKYC Status Report: SBC/DBC + Mobile status for pending eKYC
+  if(ekyc!=='Completed'){
+   if(connType.toLowerCase()==='sbc'||connType.toLowerCase().includes('sbc')){
+    pendingEkycMap[n].sbc++;
+    totalPendingEkyc.sbc++;
+   }else if(connType.toLowerCase()==='dbc'||connType.toLowerCase().includes('dbc')){
+    pendingEkycMap[n].dbc++;
+    totalPendingEkyc.dbc++;
+   }
+   if(d['Mobile No']){
+    pendingEkycMap[n].registered++;
+    totalPendingEkyc.registered++;
+   }else{
+    pendingEkycMap[n].unregistered++;
+    totalPendingEkyc.unregistered++;
+   }
+  }
+
+  const bType=d['PFMSBeneficiaryType']||'Unknown';
+  if(bType) beneficiaryTypeMap[n][bType]=(beneficiaryTypeMap[n][bType]||0)+1;
+  if(bType) totalBeneficiaryType[bType]=(totalBeneficiaryType[bType]||0)+1;
+
+  // Booking Source Report
+  const bs=d['Last Refill BookingSource']||'Unknown';
+  bookingSourceMap[n]=bookingSourceMap[n]||{};
+  if(bs) bookingSourceMap[n][bs]=(bookingSourceMap[n][bs]||0)+1;
+  if(bs) totalBookingSource[bs]=(totalBookingSource[bs]||0)+1;
+  if(bs){
+   bookingSourceCompletionMap[bs]=bookingSourceCompletionMap[bs]||{c:0,t:0};
+   bookingSourceCompletionMap[bs].t++;
+   if(ekyc==='Completed') bookingSourceCompletionMap[bs].c++;
+  }
+
+  if(d['Delivery Area']) areaMap[n][d['Delivery Area']]=(areaMap[n][d['Delivery Area']]||0)+1;
+  const area=d['Delivery Area']||'Unknown';
+  areaEkycProgressMap[area]=areaEkycProgressMap[area]||{c:0,p:0,t:0};
+  areaEkycProgressMap[area].t++;
+  ekyc==='Completed'? areaEkycProgressMap[area].c++ : areaEkycProgressMap[area].p++;
+
+  if(rDate){
+   const diff=Math.floor((now - rDate)/86400000);
+   if(diff<=30){totalRefillBuckets.d30++} else if(diff<=60){totalRefillBuckets.d60++} else if(diff<=90){totalRefillBuckets.d90++} else {totalRefillBuckets.d90p++}
+   refillBucketMap[n]=refillBucketMap[n]||{d30:0,d60:0,d90:0,d90p:0};
+   if(diff<=30)refillBucketMap[n].d30++; else if(diff<=60)refillBucketMap[n].d60++; else if(diff<=90)refillBucketMap[n].d90++; else refillBucketMap[n].d90p++;
+  }
+ });
+
+el('reportBody').innerHTML='<div class="report-line header"><div>Nature</div><div>Total</div><div>Completed</div><div>Pending</div><div>%C</div><div>%P</div></div>'+
+ Object.keys(natureMap).map(n=>{const o=natureMap[n];return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${o.t}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']==='Completed')" data-label="Completed">${o.c}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="Pending">${o.p}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']==='Completed')" data-label="%C">${((o.c/o.t)*100).toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="%P">${((o.p/o.t)*100).toFixed(1)}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${totalNature.t}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']==='Completed')" data-label="Completed">${totalNature.c}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="Pending">${totalNature.p}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']==='Completed')" data-label="%C">${((totalNature.c/totalNature.t)*100).toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="%P">${((totalNature.p/totalNature.t)*100).toFixed(1)}</div></div>`+
+ '<div class="chart-container"><canvas id="natureChart"></canvas></div>';
+
+ createChart('natureChart', 'bar', Object.keys(natureMap), [
+   { label: 'Completed', data: Object.keys(natureMap).map(n => natureMap[n].c), backgroundColor: '#10b981' },
+   { label: 'Pending', data: Object.keys(natureMap).map(n => natureMap[n].p), backgroundColor: '#f59e0b' }
+ ], { indexAxis: 'y', scales: { x: { stacked: true, title: { display: true, text: 'Count' } }, y: { stacked: true, title: { display: true, text: 'Consumer Nature' } } } });
+
+el('mobileReport').innerHTML='<div class="report-line header"><div>Nature</div><div>Registered</div><div>Unregistered</div><div>Total</div><div>%R</div><div>%U</div></div>'+
+ Object.keys(mobileMap).map(n=>{const o=mobileMap[n];const t=o.reg+o.unreg;return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['Mobile No'])" data-label="Registered">${o.reg}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&!d['Mobile No'])" data-label="Unregistered">${o.unreg}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${t}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['Mobile No'])" data-label="%R">${((o.reg/t)*100||0).toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&!d['Mobile No'])" data-label="%U">${((o.unreg/t)*100||0).toFixed(1)}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>d['Mobile No'])" data-label="Registered">${totalMobile.reg}</div><div class="report-clickable" onclick="reportFilter(d=>!d['Mobile No'])" data-label="Unregistered">${totalMobile.unreg}</div><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${totalMobile.reg+totalMobile.unreg}</div><div class="report-clickable" onclick="reportFilter(d=>d['Mobile No'])" data-label="%R">${((totalMobile.reg/(totalMobile.reg+totalMobile.unreg))*100||0).toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>!d['Mobile No'])" data-label="%U">${((totalMobile.unreg/(totalMobile.reg+totalMobile.unreg))*100||0).toFixed(1)}</div></div>`+
+ '<div class="chart-container"><canvas id="mobileChart"></canvas></div>';
+
+ createChart('mobileChart', 'doughnut', ['Registered', 'Unregistered'], [
+   { data: [totalMobile.reg, totalMobile.unreg], backgroundColor: ['#3b82f6', '#ef4444'] }
+ ]);
+
+el('areaEkycProgress').innerHTML=`
+  <div style="margin-bottom:20px; padding:15px; background:var(--bg-card); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+    <h4 style="margin-top:0; margin-bottom:15px;">क्षेत्र-वार eKYC प्रदर्शन (Heat Map)</h4>
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px;" id="areaHeatMap">
+      ${Object.keys(areaEkycProgressMap).sort((a,b)=>(areaEkycProgressMap[b].c/areaEkycProgressMap[b].t) - (areaEkycProgressMap[a].c/areaEkycProgressMap[a].t)).map(a=>{
+        const o=areaEkycProgressMap[a];
+        const perc=(o.c/o.t)*100;
+        const color = perc > 80 ? '#22c55e' : perc > 50 ? '#eab308' : '#ef4444';
+        const opacity = Math.max(0.2, perc / 100);
+        return `<div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${a}')" 
+                style="padding:10px; border-radius:8px; background:${color}; color:white; text-align:center; font-weight:bold; font-size:12px; transition:transform 0.2s;">
+          <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${a}</div>
+          <div style="font-size:16px;">${perc.toFixed(1)}%</div>
+          <div style="font-size:9px; font-weight:normal; opacity:0.9;">${o.c} / ${o.t}</div>
+        </div>`
+      }).join('')}
+    </div>
+    <div style="margin-top:20px; display:flex; justify-content:center; gap:20px; font-size:12px;">
+      <div style="display:flex; align-items:center; gap:5px;"><span style="width:12px; height:12px; background:#22c55e; border-radius:3px;"></span> >80% (अच्छा)</div>
+      <div style="display:flex; align-items:center; gap:5px;"><span style="width:12px; height:12px; background:#eab308; border-radius:3px;"></span> 50-80% (औसत)</div>
+      <div style="display:flex; align-items:center; gap:5px;"><span style="width:12px; height:12px; background:#ef4444; border-radius:3px;"></span> <50% (धीमा)</div>
+    </div>
+  </div>
+  <div class="chart-container" style="height:400px;"><canvas id="areaPerformanceChart"></canvas></div>
+  <div class="report-line header" style="margin-top:20px;"><div>Area</div><div>Total</div><div>Completed</div><div>Pending</div><div>Progress</div></div>`+
+ Object.keys(areaEkycProgressMap).sort((a,b)=>areaEkycProgressMap[b].t - areaEkycProgressMap[a].t).map(a=>{
+  const o=areaEkycProgressMap[a];
+  const perc=(o.c/o.t)*100;
+  return `<div class="report-line">
+    <div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${a}')" data-label="Area">${a}</div>
+    <div data-label="Total">${o.t}</div>
+    <div data-label="Completed">${o.c}</div>
+    <div data-label="Pending">${o.p}</div>
+    <div data-label="Progress">
+      <div style="width:100%; background:#eee; height:8px; border-radius:4px; overflow:hidden;">
+        <div style="width:${perc}%; background:${perc>80?'#22c55e':perc>50?'#eab308':'#ef4444'}; height:100%;"></div>
+      </div>
+      <span style="font-size:10px;">${perc.toFixed(1)}%</span>
+    </div>
+  </div>`
+ }).join('');
+
+ const sortedAreas = Object.keys(areaEkycProgressMap).sort((a,b)=>(areaEkycProgressMap[b].c/areaEkycProgressMap[b].t) - (areaEkycProgressMap[a].c/areaEkycProgressMap[a].t));
+ createChart('areaPerformanceChart', 'bar', sortedAreas, [
+   { 
+     label: 'eKYC Completion %', 
+     data: sortedAreas.map(a => ((areaEkycProgressMap[a].c/areaEkycProgressMap[a].t)*100).toFixed(1)),
+     backgroundColor: sortedAreas.map(a => {
+       const p = (areaEkycProgressMap[a].c/areaEkycProgressMap[a].t)*100;
+       return p > 80 ? '#22c55e' : p > 50 ? '#eab308' : '#ef4444';
+     })
+   }
+ ], { 
+   plugins: { legend: { display: false } },
+   scales: { 
+     y: { beginAtZero: true, max: 100, title: { display: true, text: 'Completion %' } },
+     x: { title: { display: true, text: 'Delivery Area' } }
+   }
+ });
+
+ el('refillReport').innerHTML='<div class="report-line header"><div>Nature</div><div>Pending</div><div>Current Month</div><div>Last Month</div><div>FY</div></div>'+
+ Object.keys(refillMap).map(n=>{const o=refillMap[n];return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="Pending">${o.pending}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate'])&&parseDate(d['LastRefillDate']).getMonth()===new Date().getMonth()&&parseDate(d['LastRefillDate']).getFullYear()===new Date().getFullYear())" data-label="Current Month">${o.cm}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate'])&&parseDate(d['LastRefillDate']).getMonth()===(new Date().getMonth()-1))" data-label="Last Month">${o.lm}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate']))" data-label="FY">${o.fy}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="Pending">${totalRefill.pending}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate'])&&parseDate(d['LastRefillDate']).getMonth()===new Date().getMonth()&&parseDate(d['LastRefillDate']).getFullYear()===new Date().getFullYear())" data-label="Current Month">${totalRefill.cm}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate'])&&parseDate(d['LastRefillDate']).getMonth()===(new Date().getMonth()-1))" data-label="Last Month">${totalRefill.lm}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&parseDate(d['LastRefillDate']))" data-label="FY">${totalRefill.fy}</div></div>` +
+ '<div class="chart-container"><canvas id="refillChart"></canvas></div>';
+
+ createChart('refillChart', 'bar', Object.keys(refillMap), [
+   { label: 'Current Month Refill', data: Object.keys(refillMap).map(n => refillMap[n].cm), backgroundColor: '#3b82f6' },
+   { label: 'Last Month Refill', data: Object.keys(refillMap).map(n => refillMap[n].lm), backgroundColor: '#6366f1' },
+   { label: 'FY Refill', data: Object.keys(refillMap).map(n => refillMap[n].fy), backgroundColor: '#8b5cf6' }
+ ], { scales: { y: { title: { display: true, text: 'Count' } }, x: { title: { display: true, text: 'Consumer Nature' } } } });
+
+ el('completedReport').innerHTML='<div class="report-line header"><div>Nature</div><div>Today</div><div>Yesterday</div><div>Month</div><div>FY</div></div>'+
+ Object.keys(completedMap).map(n=>{const o=completedMap[n];return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).toDateString()===new Date().toDateString()&&d['Consumer Nature']==='${n}')" data-label="Today">${o.today}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).toDateString()===new Date(Date.now()-86400000).toDateString()&&d['Consumer Nature']==='${n}')" data-label="Yesterday">${o.yest}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).getMonth()===now.getMonth()&&d['Consumer Nature']==='${n}')" data-label="Month">${o.month}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&d['Consumer Nature']==='${n}')" data-label="FY">${o.fy}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).toDateString()===new Date().toDateString())" data-label="Today">${totalCompleted.today}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).toDateString()===new Date(Date.now()-86400000).toDateString())" data-label="Yesterday">${totalCompleted.yest}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date'])&&parseDate(d['EKYC Date']).getMonth()===now.getMonth())" data-label="Month">${totalCompleted.month}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['EKYC Date']))" data-label="FY">${totalCompleted.fy}</div></div>` +
+ '<div class="chart-container"><canvas id="completedChart"></canvas></div>';
+
+ createChart('completedChart', 'line', ['FY', 'Month', 'Yesterday', 'Today'], [
+  { label: 'Completed eKYC', data: [totalCompleted.fy, totalCompleted.month, totalCompleted.yest, totalCompleted.today], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }
+], { 
+  scales: { 
+    y: { beginAtZero: true, title: { display: true, text: 'Count' } }, 
+    x: { title: { display: true, text: 'Period' } } 
+  } 
+});
+
+ el('nilRefillReport').innerHTML='<div class="report-line header"><div>Nature</div><div>eKYC Completed - No Refill</div><div>eKYC Pending - No Refill</div><div>Total No Refill</div><div>%C</div><div>%P</div></div>'+
+ Object.keys(nilRefillMap).map(n=>{const o=nilRefillMap[n];const total=o.completed+o.pending;return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="eKYC Completed - No Refill">${o.completed}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="eKYC Pending - No Refill">${o.pending}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="Total No Refill">${total}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="%C">${total>0?((o.completed/total)*100).toFixed(1):'0'}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="%P">${total>0?((o.pending/total)*100).toFixed(1):'0'}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="eKYC Completed - No Refill">${totalNilRefill.completed}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="eKYC Pending - No Refill">${totalNilRefill.pending}</div><div class="report-clickable" onclick="reportFilter(d=>(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="Total No Refill">${totalNilRefill.completed+totalNilRefill.pending}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']==='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="%C">${totalNilRefill.completed+totalNilRefill.pending>0?((totalNilRefill.completed/(totalNilRefill.completed+totalNilRefill.pending))*100).toFixed(1):'0'}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&(!parseDate(d['LastRefillDate'])||parseDate(d['LastRefillDate'])<new Date(2025,3,1)))" data-label="%P">${totalNilRefill.completed+totalNilRefill.pending>0?((totalNilRefill.pending/(totalNilRefill.completed+totalNilRefill.pending))*100).toFixed(1):'0'}</div></div>` +
+ '<div class="chart-container"><canvas id="nilRefillChart"></canvas></div>';
+
+ createChart('nilRefillChart', 'bar', Object.keys(nilRefillMap), [
+  { label: 'eKYC Completed', data: Object.keys(nilRefillMap).map(n => nilRefillMap[n].completed), backgroundColor: '#10b981' },
+  { label: 'eKYC Pending', data: Object.keys(nilRefillMap).map(n => nilRefillMap[n].pending), backgroundColor: '#f59e0b' }
+], { 
+  scales: { 
+    x: { stacked: true, title: { display: true, text: 'Consumer Nature' } }, 
+    y: { stacked: true, title: { display: true, text: 'No Refill Count' } } 
+  } 
+});
+
+ el('svReport').innerHTML='<div class="report-line header"><div>Nature</div><div>Today</div><div>Yesterday</div><div>Month</div><div>FY</div><div>Old</div></div>'+
+ Object.keys(svMap).map(n=>{const o=svMap[n];return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['SV Date'])&&parseDate(d['SV Date']).toDateString()===new Date().toDateString())" data-label="Today">${o.today}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['SV Date'])&&parseDate(d['SV Date']).toDateString()===new Date(Date.now()-86400000).toDateString())" data-label="Yesterday">${o.yest}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['SV Date'])&&parseDate(d['SV Date']).getMonth()===new Date().getMonth()&&parseDate(d['SV Date']).getFullYear()===new Date().getFullYear())" data-label="Month">${o.month}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['SV Date'])&&parseDate(d['SV Date'])>=new Date((new Date().getMonth()>=3)?new Date().getFullYear():new Date().getFullYear()-1,3,1)&&parseDate(d['SV Date'])<=new Date((new Date().getMonth()>=3)?new Date().getFullYear()+1:new Date().getFullYear(),2,31))" data-label="FY">${o.fy}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['SV Date'])&&parseDate(d['SV Date'])<new Date((new Date().getMonth()>=3)?new Date().getFullYear():new Date().getFullYear()-1,3,1))" data-label="Old">${o.old}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date']))" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date'])&&parseDate(d['SV Date']).toDateString()===new Date().toDateString())" data-label="Today">${totalSV.today}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date'])&&parseDate(d['SV Date']).toDateString()===new Date(Date.now()-86400000).toDateString())" data-label="Yesterday">${totalSV.yest}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date'])&&parseDate(d['SV Date']).getMonth()===new Date().getMonth()&&parseDate(d['SV Date']).getFullYear()===new Date().getFullYear())" data-label="Month">${totalSV.month}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date'])&&parseDate(d['SV Date'])>=new Date((new Date().getMonth()>=3)?new Date().getFullYear():new Date().getFullYear()-1,3,1)&&parseDate(d['SV Date'])<=new Date((new Date().getMonth()>=3)?new Date().getFullYear()+1:new Date().getFullYear(),2,31))" data-label="FY">${totalSV.fy}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['SV Date'])&&parseDate(d['SV Date'])<new Date((new Date().getMonth()>=3)?new Date().getFullYear():new Date().getFullYear()-1,3,1))" data-label="Old">${totalSV.old}</div></div>` +
+ '<div class="chart-container"><canvas id="svChart"></canvas></div>';
+
+ createChart('svChart', 'bar', ['Today', 'Yesterday', 'Month', 'FY', 'Old'], [
+  { label: 'SV Generated', data: [totalSV.today, totalSV.yest, totalSV.month, totalSV.fy, totalSV.old], backgroundColor: '#8b5cf6' }
+], { 
+  scales: { 
+    y: { beginAtZero: true, title: { display: true, text: 'Count' } }, 
+    x: { title: { display: true, text: 'Period' } } 
+  } 
+});
+
+ el('sbcDbcReport').innerHTML='<div class="report-line header"><div>Nature</div><div>SBC</div><div>DBC</div><div>Total</div><div>%SBC</div><div>%DBC</div></div>'+
+ Object.keys(sbcDbcMap).map(n=>{const o=sbcDbcMap[n];const total=o.sbc+o.dbc;return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="SBC">${o.sbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="DBC">${o.dbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${total}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="%SBC">${total>0?((o.sbc/total)*100).toFixed(1):'0'}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="%DBC">${total>0?((o.dbc/total)*100).toFixed(1):'0'}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="SBC">${totalSbcDbc.sbc}</div><div class="report-clickable" onclick="reportFilter(d=>(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="DBC">${totalSbcDbc.dbc}</div><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${totalSbcDbc.sbc+totalSbcDbc.dbc}</div><div class="report-clickable" onclick="reportFilter(d=>(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="%SBC">${totalSbcDbc.sbc+totalSbcDbc.dbc>0?((totalSbcDbc.sbc/(totalSbcDbc.sbc+totalSbcDbc.dbc))*100).toFixed(1):'0'}</div><div class="report-clickable" onclick="reportFilter(d=>(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="%DBC">${totalSbcDbc.sbc+totalSbcDbc.dbc>0?((totalSbcDbc.dbc/(totalSbcDbc.sbc+totalSbcDbc.dbc))*100).toFixed(1):'0'}</div></div>` +
+ '<div class="chart-container"><canvas id="sbcDbcChart"></canvas></div>';
+
+ createChart('sbcDbcChart', 'doughnut', ['SBC', 'DBC'], [
+   { data: [totalSbcDbc.sbc, totalSbcDbc.dbc], backgroundColor: ['#f59e0b', '#3b82f6'] }
+ ]);
+
+ el('pendingEkycReport').innerHTML='<div class="report-line header"><div>Nature</div><div>Pending SBC</div><div>Pending DBC</div><div>Pending Registered</div><div>Pending Unregistered</div><div>Total Pending</div></div>'+
+ Object.keys(pendingEkycMap).map(n=>{const o=pendingEkycMap[n];const total=o.sbc+o.dbc;return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="Pending SBC">${o.sbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="Pending DBC">${o.dbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&d['Mobile No'])" data-label="Pending Registered">${o.registered}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed'&&!d['Mobile No'])" data-label="Pending Unregistered">${o.unregistered}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['EKYC Status']!=='Completed')" data-label="Total Pending">${o.registered+o.unregistered}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&(d['Connection Type']||'').toLowerCase()==='sbc')" data-label="Pending SBC">${totalPendingEkyc.sbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&(d['Connection Type']||'').toLowerCase()==='dbc')" data-label="Pending DBC">${totalPendingEkyc.dbc}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&d['Mobile No'])" data-label="Pending Registered">${totalPendingEkyc.registered}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed'&&!d['Mobile No'])" data-label="Pending Unregistered">${totalPendingEkyc.unregistered}</div><div class="report-clickable" onclick="reportFilter(d=>d['EKYC Status']!=='Completed')" data-label="Total Pending">${totalPendingEkyc.registered+totalPendingEkyc.unregistered}</div></div>` +
+ '<div class="chart-container"><canvas id="pendingEkycChart"></canvas></div>';
+
+createChart('pendingEkycChart', 'bar', Object.keys(pendingEkycMap), [
+  { label: 'Pending SBC', data: Object.keys(pendingEkycMap).map(n => pendingEkycMap[n].sbc), backgroundColor: '#f59e0b' },
+  { label: 'Pending DBC', data: Object.keys(pendingEkycMap).map(n => pendingEkycMap[n].dbc), backgroundColor: '#3b82f6' }
+], { 
+  scales: { 
+    x: { stacked: true, title: { display: true, text: 'Consumer Nature' } }, 
+    y: { stacked: true, title: { display: true, text: 'Pending Count' } } 
+  } 
+});
+
+ const maxBeneficiaryTotal=Math.max(1,...Object.values(totalBeneficiaryType));
+  el('beneficiaryTypeReport').innerHTML='<div class="report-line header"><div>Nature</div><div>'+Object.keys(totalBeneficiaryType).join('</div><div>')+'</div><div>Total</div></div>'+
+ Object.keys(beneficiaryTypeMap).map(n=>{const o=beneficiaryTypeMap[n];const total=Object.values(o).reduce((a,b)=>a+b,0);const allBTypes=Object.keys(totalBeneficiaryType);return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div>`+allBTypes.map(bt=>`<div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['PFMSBeneficiaryType']==='${bt}')" data-label="${bt}">${o[bt]||0}</div>`).join('')+`<div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${total}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div>`+Object.keys(totalBeneficiaryType).map(bt=>`<div class="report-clickable" onclick="reportFilter(d=>d['PFMSBeneficiaryType']==='${bt}')" data-label="${bt}">${totalBeneficiaryType[bt]||0}</div>`).join('')+`<div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${Object.values(totalBeneficiaryType).reduce((a,b)=>a+b,0)}</div></div>`+
+ '<div class="chart">'+Object.keys(totalBeneficiaryType).map(bt=>{const v=totalBeneficiaryType[bt]||0;return `<div class="chart-row"><div class="chart-label">${bt}</div><div class="chart-bar"><div class="chart-fill single" style="width:${((v/maxBeneficiaryTotal)*100).toFixed(1)}%" title="${bt}: ${v}"></div></div></div>`}).join('')+'</div>';
+
+ const allBookingSources = Object.keys(totalBookingSource).sort();
+ const maxBookingSourceTotal=Math.max(1,...Object.values(totalBookingSource));
+ const gridStyle = `style="grid-template-columns: 240px repeat(${allBookingSources.length + 1}, 1fr)"`;
+ el('bookingSourceReport').innerHTML='<div class="report-line header" '+gridStyle+'><div>Nature</div><div>'+allBookingSources.join('</div><div>')+'</div><div>Total</div></div>'+
+ Object.keys(bookingSourceMap).map(n=>{const o=bookingSourceMap[n];const total=Object.values(o).reduce((a,b)=>a+b,0);return `<div class="report-line" ${gridStyle}><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div>`+allBookingSources.map(bs=>`<div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['Last Refill BookingSource']==='${bs}')" data-label="${bs}">${o[bs]||0}</div>`).join('')+`<div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${total}</div></div>`}).join('')+
+ `<div class="report-line total" ${gridStyle}><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div>`+allBookingSources.map(bs=>`<div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}')" data-label="${bs}">${totalBookingSource[bs]||0}</div>`).join('')+`<div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${Object.values(totalBookingSource).reduce((a,b)=>a+b,0)}</div></div>`+
+ '<div class="chart">'+allBookingSources.map(bs=>{const v=totalBookingSource[bs]||0;return `<div class="chart-row"><div class="chart-label">${bs}</div><div class="chart-bar"><div class="chart-fill single" style="width:${((v/maxBookingSourceTotal)*100).toFixed(1)}%" title="${bs}: ${v}"></div></div></div>`}).join('')+'</div>';
+
+ el('topAreas').innerHTML=Object.keys(areaMap).map(n=>`<div class="toparea-card"><b>${n}</b><br>`+Object.entries(areaMap[n]).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>`<div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&d['Delivery Area']==='${x[0]}')">${x[0]} : ${x[1]}</div>`).join('')+'</div>').join('');
+
+  const areaData = Object.keys(areaEkycProgressMap).sort().map(a=>{
+    const o=areaEkycProgressMap[a];
+    const t=o.t||1;
+    const pct = (o.c/t)*100;
+    let color = '#ef4444';
+    if(pct >= 85) color = '#10b981';
+    else if(pct >= 70) color = '#3b82f6';
+    else if(pct >= 50) color = '#f59e0b';
+    return { a, o, pct, color };
+  });
+  
+  el('areaEkycProgress').innerHTML = '<div id="areaHeatMap">' + 
+    areaData.map(x => `<div class="heat-card" style="background:${x.color}" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}')"><div class="area-name" title="${x.a}">${x.a}</div><div class="area-val">${x.o.c}/${x.o.t}</div><div class="area-pct">${x.pct.toFixed(1)}% Done</div></div>`).join('') +
+    '</div>' +
+    '<div class="report-line header"><div>Delivery Area</div><div>Completed</div><div>Pending</div><div>Total</div><div>% Completed</div><div>% Pending</div></div>' +
+    areaData.map(x => `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}')" data-label="Area">${x.a}</div><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}'&&d['EKYC Status']==='Completed')" data-label="Completed">${x.o.c}</div><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}'&&d['EKYC Status']!=='Completed')" data-label="Pending">${x.o.p}</div><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}')" data-label="Total">${x.o.t}</div><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}'&&d['EKYC Status']==='Completed')" data-label="%C">${x.pct.toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>d['Delivery Area']==='${x.a}'&&d['EKYC Status']!=='Completed')" data-label="%P">${((x.o.p/(x.o.t||1))*100).toFixed(1)}</div></div>`).join('');
+
+
+ const maxRefillBucketTotal=Math.max(totalRefillBuckets.d30,totalRefillBuckets.d60,totalRefillBuckets.d90,totalRefillBuckets.d90p,1);
+ el('refillBuckets').innerHTML='<div class="report-line header"><div>Nature</div><div>0-30d</div><div>31-60d</div><div>61-90d</div><div>>90d</div><div>Total</div></div>'+
+ Object.keys(refillBucketMap).map(n=>{const o=refillBucketMap[n];const t=(o.d30+o.d60+o.d90+o.d90p);return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Nature">${n}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=30)" data-label="0-30d">${o.d30}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>30&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=60)" data-label="31-60d">${o.d60}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>60&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=90)" data-label="61-90d">${o.d90}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}'&&parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>90)" data-label=">90d">${o.d90p}</div><div class="report-clickable" onclick="reportFilter(d=>d['Consumer Nature']==='${n}')" data-label="Total">${t}</div></div>`}).join('')+
+ `<div class="report-line total"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Nature">Grand Total</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=30)" data-label="0-30d">${totalRefillBuckets.d30}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>30&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=60)" data-label="31-60d">${totalRefillBuckets.d60}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>60&&((new Date()-parseDate(d['LastRefillDate']))/86400000)<=90)" data-label="61-90d">${totalRefillBuckets.d90}</div><div class="report-clickable" onclick="reportFilter(d=>parseDate(d['LastRefillDate'])&&((new Date()-parseDate(d['LastRefillDate']))/86400000)>90)" data-label=">90d">${totalRefillBuckets.d90p}</div><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Total">${totalRefillBuckets.d30+totalRefillBuckets.d60+totalRefillBuckets.d90+totalRefillBuckets.d90p}</div></div>`+
+ '<div class="chart">'+['0-30d','31-60d','61-90d','>90d'].map((label,idx)=>{const v=[totalRefillBuckets.d30,totalRefillBuckets.d60,totalRefillBuckets.d90,totalRefillBuckets.d90p][idx];return `<div class="chart-row"><div class="chart-label">${label}</div><div class="chart-bar"><div class="chart-fill single" style="width:${((v/maxRefillBucketTotal)*100).toFixed(1)}%" title="${label}: ${v}"></div></div></div>`}).join('')+'</div>';
+
+let bsC=0,bsP=0;Object.values(bookingSourceCompletionMap).forEach(o=>{bsC+=o.c;bsP+=(o.t-o.c);});
+const maxBsComp=Math.max(bsC,bsP,1);
+el('bookingSourceCompletion').innerHTML='<div class="report-line header"><div>Booking Source</div><div>Completed</div><div>Pending</div><div>Total</div><div>% Completed</div><div>% Pending</div></div>'+
+ Object.keys(bookingSourceCompletionMap).sort().map(bs=>{const o=bookingSourceCompletionMap[bs];const t=o.t||1;const p=o.t-o.c;return `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}')" data-label="Booking Source">${bs}</div><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}'&&d['EKYC Status']==='Completed')" data-label="Completed">${o.c}</div><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}'&&d['EKYC Status']!=='Completed')" data-label="Pending">${p}</div><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}')" data-label="Total">${o.t}</div><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}'&&d['EKYC Status']==='Completed')" data-label="% Completed">${((o.c/t)*100).toFixed(1)}</div><div class="report-clickable" onclick="reportFilter(d=>d['Last Refill BookingSource']==='${bs}'&&d['EKYC Status']!=='Completed')" data-label="% Pending">${((p/t)*100).toFixed(1)}</div></div>`}).join('')+
+ '<div class="chart">'+[['Completed',bsC,'completed'],['Pending',bsP,'pending']].map(([label,v,cls])=>`<div class="chart-row"><div class="chart-label">${label}</div><div class="chart-bar"><div class="chart-fill ${cls}" style="width:${((v/maxBsComp)*100).toFixed(1)}%" title="${label}: ${v}"></div></div></div>`).join('')+'</div>';
+
+ const dupMobCount=Object.values(dq.dupMobile).filter(x=>x>1).length;
+ el('dataQualityReport').innerHTML='<div class="report-line header"><div>Metric</div><div>Count</div></div>'+
+ `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>!d['Mobile No'])" data-label="Metric">Missing Mobile No</div><div class="report-clickable" onclick="reportFilter(d=>!d['Mobile No'])" data-label="Count">${dq.missingMobile}</div></div>`+
+ `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>!parseDate(d['LastRefillDate']))" data-label="Metric">Missing LastRefillDate</div><div class="report-clickable" onclick="reportFilter(d=>!parseDate(d['LastRefillDate']))" data-label="Count">${dq.missingRefill}</div></div>`+
+ `<div class="report-line"><div class="report-clickable" onclick="reportFilter(d=>d['LastRefillDate']&& !parseDate(d['LastRefillDate']))" data-label="Metric">Invalid Refill Date</div><div class="report-clickable" onclick="reportFilter(d=>d['LastRefillDate']&& !parseDate(d['LastRefillDate']))" data-label="Count">${dq.invalidDates}</div></div>`+
+ `<div class="report-line"><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Metric">Duplicate Mobile Nos (unique dups)</div><div class="report-clickable" onclick="reportFilter(()=>true)" data-label="Count">${dupMobCount}</div></div>`;
+
+  const currentMonthPrefix = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const monthName = now.toLocaleString('default', { month: 'long' });
+  const year = now.getFullYear();
+  const monthYearLabel = `${monthName} ${year}`;
+
+  const sortedDates = Object.keys(trendMap)
+     .filter(d => d.startsWith(currentMonthPrefix))
+     .sort();
+   const displayLabels = sortedDates.map(d => {
+     const [y, m, day] = d.split('-');
+     return `${day}-${m}-${y}`;
+   });
+  
+   el('trendAnalysisReport').innerHTML = '<div class="chart-container"><canvas id="trendChart"></canvas></div>';
+   createChart('trendChart', 'line', displayLabels, [{
+     label: `eKYC Completed (${monthYearLabel})`,
+     data: sortedDates.map(d => trendMap[d]),
+     borderColor: '#2563eb',
+     backgroundColor: 'rgba(37, 99, 235, 0.1)',
+     fill: true,
+     tension: 0.4
+   }], {
+     scales: {
+       y: { beginAtZero: true, title: { display: true, text: 'Count' } },
+       x: { title: { display: true, text: `Date (${monthYearLabel})` } }
+     }
+   });
+
+ checkGoals({ completed: totalNature.c, total: totalNature.t });
+}
+
+function downloadConsumerPDF(no) {
+  const element = document.getElementById('consumerCardContent');
+  if(!element) return;
+  
+  // Clone element to modify for PDF without affecting UI
+  const clone = element.cloneNode(true);
+  
+  // Apply specific styles for A4 fit
+  clone.style.width = '190mm'; // Standard A4 width minus margins
+  clone.style.padding = '5mm';
+  clone.style.background = '#fff';
+  clone.style.margin = '0';
+  clone.style.fontSize = '10px';
+  clone.style.fontFamily = 'sans-serif';
+
+  // Remove buttons and UI controls from clone
+  const uiElements = clone.querySelectorAll('button, .book-close, .wa-btn, .book-action-bar');
+  uiElements.forEach(el => el.remove());
+
+  // Optimize grid for printing - ensure sections don't break awkwardly
+  const sections = clone.querySelectorAll('.book-section');
+  sections.forEach(s => {
+    s.style.marginBottom = '10px';
+    s.style.pageBreakInside = 'avoid';
+  });
+
+  const grids = clone.querySelectorAll('.book-grid');
+  grids.forEach(g => {
+    g.style.display = 'grid';
+    g.style.gridTemplateColumns = 'repeat(2, 1fr)'; // Two columns for better space usage
+    g.style.gap = '5px';
+  });
+
+  const opt = {
+    margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+    filename: `Consumer_${no}_Details.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  html2pdf().set(opt).from(clone).save();
+}
+
+function openBook(no){
+  if (isDashboardLocked) {
+    alert('Dashboard लॉक है। कृपया अनलॉक करें।');
+    return;
+  }
+  flashEKYC.classList.add('hidden');
+  flashMobile.classList.add('hidden');
+  const c=data.find(d=>String(d['Consumer No']).trim()===String(no).trim());
+  if(!c) return alert('Consumer not found');
+  
+  if(c['EKYC Status']!=='Completed') flashEKYC.classList.remove('hidden');
+  if(!c['Mobile No']) flashMobile.classList.remove('hidden');
+
+  const isPending = c['EKYC Status'] !== 'Completed';
+  
+  const groups = {
+    '👤 बुनियादी विवरण': ['SL No.', 'Consumer No', 'LPG ID', 'Consumer Name', 'Mobile No', 'Consumer Status', 'Connection Type', 'Consumer Nature', 'SubNature Code', 'Delivery Area', 'Consumer Address'],
+    '✅ KYC और बैंक विवरण': ['Is KYC Completed', 'EKYC Status', 'EKYC Date', 'EKYC Mode', 'EKYC From', 'MaskedAadhar', 'Eligible For Subsidy', 'PFMSBeneficiaryId', 'PFMSBeneficiaryType', 'BankAccountNo', 'BankIFSCCode'],
+    '⛽ रिफिल और बुकिंग': ['LastRefillDate', 'Last Refill BookingSource', 'IVRS No.2', 'IVRS No.3', 'IVRS No.4'],
+    '🛠️ सेवा और सुरक्षा': ['SV Date', 'Safety Inspection Status', 'Safety Inspection Date', 'Hose Validity Date', 'MI Date', 'CTC Flag', 'CTC Date']
+  };
+
+  const renderRow = (k) => {
+    if (k === 'IVRS No.2' || k === 'IVRS No.3' || k === 'IVRS No.4') {
+      const val = String(c[k] || '').replace(/['"\s]/g, '');
+      if (!val) return '';
+      return `<div class="row"><div class="label">${k}</div><div class="value">${buildWhatsAppLinkForNumber(val, c)}</div></div>`;
+    }
+    const boldKeys = ['Consumer No', 'Consumer Name', 'Mobile No', 'EKYC Status'];
+    const isBold = boldKeys.includes(k);
+    const val = c[k] || '---';
+    let displayVal = val;
+    if (k === 'EKYC Status') {
+      const badgeCls = val === 'Completed' ? 'success' : 'pending';
+      displayVal = `<span class="book-badge ${badgeCls}">${val}</span>`;
+    }
+    return `<div class="row"><div class="label">${k}</div><div class="value ${isBold ? 'value-bold' : ''}">${displayVal}</div></div>`;
+  };
+
+  const actionButtons = [];
+  if (isPending) actionButtons.push(`<div style="display:flex;align-items:center;gap:8px;"><b>Pending eKYC:</b> ${buildWhatsAppLink(c)}</div>`);
+  const sbcLink = buildWhatsAppLinkSBC(c);
+  if (sbcLink) actionButtons.push(`<div style="display:flex;align-items:center;gap:8px;"><b>DBC Request:</b> ${sbcLink}</div>`);
+  const nctcLink = buildWhatsAppLinkNCTC(c);
+  if (nctcLink) actionButtons.push(`<div style="display:flex;align-items:center;gap:8px;"><b>NCTC Subsidy:</b> ${nctcLink}</div>`);
+
+  const actionBar = actionButtons.length ? `<div class="book-action-bar">${actionButtons.join('<div style="width:1px;height:20px;background:var(--border);margin:0 10px;"></div>')}</div>` : '';
+
+  let html = `
+    <div class="book-wrap" onclick="if(event.target===this){this.remove();flashEKYC.classList.add('hidden');flashMobile.classList.add('hidden');}">
+       <div class="book ${isPending ? 'pending' : ''}" id="consumerCardContent">
+         <span class="book-close" onclick="this.closest('.book-wrap').remove();flashEKYC.classList.add('hidden');flashMobile.classList.add('hidden')">✖</span>
+         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+           <h3 style="${isPending ? 'color: var(--danger);margin:0;' : 'margin:0;'}"><span>👤</span> उपभोक्ता विवरण - ${no} - ${c['Consumer Name'] || ''}</h3>
+           <button class="btn-pdf" onclick="downloadConsumerPDF('${no}')" style="background:var(--danger);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;">
+             <span>📄</span> PDF डाउनलोड करें
+           </button>
+         </div>
+         ${actionBar}
+        <div class="book-content">
+          ${Object.entries(groups).map(([title, keys]) => {
+            const rows = keys.map(k => renderRow(k)).filter(r => r).join('');
+            if (!rows) return '';
+            return `
+              <div class="book-section">
+                <div class="book-section-title">${title}</div>
+                <div class="book-grid">${rows}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  el('bookView').innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function printFiltered(){const topMsg=document.querySelector('.top-msg'),fileUpload=document.querySelector('.file-upload'),flashMsgs=document.querySelectorAll('.alert-msg'),bookView=el('bookView'),reportWrapper=document.querySelector('.report-wrapper'),tableTools=document.querySelector('.table-tools'),pagination=document.querySelector('.pagination'),footer=document.querySelector('.footer'),filters=document.querySelector('.filters'),tableWrap=document.querySelector('.table-wrap'),originalHTML=dataTable.innerHTML;const headerRow=visibleCols.map(c=>`<th style="background:#ecf0f1;font-weight:bold;border:1px solid #ccc;padding:8px">${c}</th>`).join('');const dataRows=filteredData.map(o=>'<tr>'+visibleCols.map(c=>c==='Consumer No'?`<td style="border:1px solid #ccc;padding:6px"><span class="consumer-link">${o[c]}</span></td>`:`<td style="border:1px solid #ccc;padding:6px">${o[c]||''}</td>`).join('')+'</tr>').join('');dataTable.innerHTML='<thead><tr>'+headerRow+'</tr></thead><tbody>'+dataRows+'</tbody>';topMsg.style.display='none';fileUpload.style.display='none';flashMsgs.forEach(m=>m.style.display='none');bookView.style.display='none';reportWrapper.style.display='none';tableTools.style.display='none';pagination.style.display='none';footer.style.display='none';filters.style.display='none';const style=document.createElement('style');style.innerHTML='@media print{body{margin:10px}table{width:100%;border-collapse:collapse}thead{display:table-header-group;background:#ecf0f1}thead tr{page-break-inside:avoid}tbody tr{page-break-inside:avoid;height:auto}th,td{border:1px solid #ccc;padding:8px;font-size:11px;text-align:left}th{background:#ecf0f1;font-weight:bold}}';document.head.appendChild(style);window.print();dataTable.innerHTML=originalHTML;document.head.removeChild(style);topMsg.style.display='block';fileUpload.style.display='block';bookView.style.display='block';reportWrapper.style.display='grid';tableTools.style.display='flex';pagination.style.display='flex';footer.style.display='block';filters.style.display='flex'}
+function doPrint(){const topMsg=document.querySelector('.top-msg'),fileUpload=document.querySelector('.file-upload'),flashMsgs=document.querySelectorAll('.alert-msg'),navbar=document.querySelector('.navbar'),reportContainer=el('reportContainer'),consumerDataContainer=el('consumerDataContainer'),localFilters=consumerDataContainer.querySelector('.filters'),tableTools=document.querySelector('.table-tools'),pagination=document.querySelector('.pagination'),footer=document.querySelector('.footer');const originalHTML=dataTable.innerHTML;const headerRow=visibleCols.map(c=>`<th style="background:#ecf0f1;font-weight:bold;border:1px solid #ccc;padding:8px">${c}</th>`).join('');const dataRows=filteredData.map(o=>'<tr>'+visibleCols.map(c=>c==='Consumer No'?`<td style="border:1px solid #ccc;padding:6px"><span class="consumer-link">${o[c]}</span></td>`:`<td style="border:1px solid #ccc;padding:6px">${o[c]||''}</td>`).join('')+'</tr>').join('');dataTable.innerHTML='<thead><tr>'+headerRow+'</tr></thead><tbody>'+dataRows+'</tbody>';[topMsg,fileUpload,navbar,reportContainer,footer].forEach(e=>{if(e)e.style.display='none'});flashMsgs.forEach(m=>m.style.display='none');if(localFilters)localFilters.style.display='none';if(tableTools)tableTools.style.display='none';if(pagination)pagination.style.display='none';const style=document.createElement('style');style.innerHTML='@media print{body{margin:10px}table{width:100%;border-collapse:collapse}thead{display:table-header-group;background:#ecf0f1}thead tr{page-break-inside:avoid}tbody tr{page-break-inside:avoid;height:auto}th,td{border:1px solid #ccc;padding:8px;font-size:11px;text-align:left}th{background:#ecf0f1;font-weight:bold}}';document.head.appendChild(style);window.print();dataTable.innerHTML=originalHTML;document.head.removeChild(style);[topMsg,fileUpload,navbar,reportContainer,footer].forEach(e=>{if(e)e.style.display='block'});flashMsgs.forEach(m=>m.style.display='none');if(localFilters)localFilters.style.display='flex';if(tableTools)tableTools.style.display='flex';if(pagination)pagination.style.display='flex'}
+
+function doPrintFixed(){
+ const topMsg=document.querySelector('.top-msg');
+ const fileUpload=document.querySelector('.file-upload');
+ const flashMsgs=document.querySelectorAll('.alert-msg');
+ const navbar=document.querySelector('.navbar');
+ const reportContainer=el('reportContainer');
+ const requestContainer=el('requestContainer');
+ const bookView=el('bookView');
+ const aboutContainer=el('aboutContainer');
+ const pageHeader=document.querySelector('h2');
+ const topFiltersEl=el('topFilters');
+ const consumerDataContainer=el('consumerDataContainer');
+ const localFilters=consumerDataContainer?consumerDataContainer.querySelector('.filters'):null;
+ const tableTools=document.querySelector('.table-tools');
+ const pagination=document.querySelector('.pagination');
+ const footer=document.querySelector('.footer');
+ const originalHTML=dataTable.innerHTML;
+ const headerRow=visibleCols.map(c=>`<th style="background:#ecf0f1;font-weight:bold;border:1px solid #ccc;padding:8px">${c}</th>`).join('');
+ const dataRows=filteredData.map(o=>'<tr>'+visibleCols.map(c=>c==='Consumer No'
+  ?`<td style="border:1px solid #ccc;padding:6px"><span class="consumer-link">${o[c]}</span></td>`
+  :`<td style="border:1px solid #ccc;padding:6px">${o[c]||''}</td>`
+ ).join('')+'</tr>').join('');
+ dataTable.innerHTML='<thead><tr>'+headerRow+'</tr></thead><tbody>'+dataRows+'</tbody>';
+ const elements=[topMsg,fileUpload,topFiltersEl,navbar,reportContainer,requestContainer,aboutContainer,bookView,footer];
+ const prevDisplay=new Map();
+ elements.forEach(e=>{if(e){prevDisplay.set(e,e.style.display);e.style.display='none';}});
+ flashMsgs.forEach(m=>m.style.display='none');
+ const prevLocalFiltersDisplay=localFilters?localFilters.style.display:null;
+ const prevTableToolsDisplay=tableTools?tableTools.style.display:null;
+ const prevPaginationDisplay=pagination?pagination.style.display:null;
+ if(localFilters)localFilters.style.display='none';
+ if(tableTools)tableTools.style.display='none';
+ if(pagination)pagination.style.display='none';
+ const style=document.createElement('style');
+ style.innerHTML='@media print{body{margin:10px}table{width:100%;border-collapse:collapse}thead{display:table-header-group;background:#ecf0f1}thead tr{page-break-inside:avoid}tbody tr{page-break-inside:avoid;height:auto}th,td{border:1px solid #ccc;padding:8px;font-size:11px;text-align:left}th{background:#ecf0f1;font-weight:bold}}';
+ document.head.appendChild(style);
+ window.print();
+ dataTable.innerHTML=originalHTML;
+ document.head.removeChild(style);
+ elements.forEach(e=>{if(e){e.style.display=prevDisplay.has(e)?prevDisplay.get(e):'';}});
+ flashMsgs.forEach(m=>m.style.display='none');
+ if(localFilters)localFilters.style.display=prevLocalFiltersDisplay||'';
+ if(tableTools)tableTools.style.display=prevTableToolsDisplay||'';
+ if(pagination)pagination.style.display=prevPaginationDisplay||'';
+}
+
+function exportToPDF(){const tempDiv=document.createElement('div');const headerRow='<tr style="background:#ecf0f1;font-weight:bold;position:sticky;top:0">'+visibleCols.map(c=>`<th style="border:1px solid #000;padding:8px;background:#ecf0f1;font-weight:bold">${c}</th>`).join('')+'</tr>';let tableHTML='<table style="border-collapse:collapse;width:100%;font-size:11px">';const rowsPerHeader=20;filteredData.forEach((o,i)=>{if(i%rowsPerHeader===0){tableHTML+=headerRow}tableHTML+='<tr style="page-break-inside:avoid;height:auto">'+visibleCols.map(c=>`<td style="border:1px solid #ccc;padding:5px;word-wrap:break-word">${o[c]||''}</td>`).join('')+'</tr>'});tableHTML+='</table>';tempDiv.innerHTML=tableHTML;const opt={margin:[8,8,8,8],filename:'Filtered_Data.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{orientation:'landscape',unit:'mm',format:'a4'}};html2pdf().set(opt).from(tempDiv).save()}
+function exportToCSV(){if(filteredData.length===0){alert('No data to export');return}const cols=visibleCols;const rows=[cols.join(',')].concat(filteredData.map(o=>cols.map(c=>String(o[c]||'').replace(/"/g,'""')).map(v=>`"${v}"`).join(',')));const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Filtered_Data.csv';document.body.appendChild(a);a.click();document.body.removeChild(a)}
+ 
+toggleLock(true);
+showAbout();
+</script>
+</body>
+</html>
