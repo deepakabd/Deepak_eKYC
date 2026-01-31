@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -62,6 +62,15 @@ body.dark-mode {
   --card-bg: #1e293b;
 }
 
+/* Locked state: hide upload UI and related controls */
+body.locked .file-upload,
+body.locked .drop-zone,
+body.locked #dropZone,
+body.locked #reUploadBtn,
+body.locked .center-btn-wrap {
+  display: none !important;
+}
+
 /* Font Size Scaling */
 body.font-sm { font-size: 13px; }
 body.font-sm .nav-item { font-size: 12px; padding: 8px 16px; }
@@ -82,7 +91,7 @@ body.font-lg select, body.font-lg input, body.font-lg button { font-size: 16px; 
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   margin: 0;
-  padding: 170px 20px 20px 20px; /* Reset padding to previous value */
+  padding: 240px 20px 20px 20px; /* Increased top padding to accommodate fixed header */
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -96,7 +105,7 @@ body {
   width: 100%;
   z-index: 2000; /* Increased z-index to stay above everything */
   background: var(--bg);
-  padding: 0 20px 5px 20px;
+  padding: 0 20px 18px 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -175,47 +184,82 @@ h2 {
   max-width: 100%;
 }
 
+/* Upload area wrapper: center upload UI under header */
+.upload-area { max-width: 1200px; margin: 12px auto 20px auto; }
+.file-upload.uploaded { padding: 10px 14px; border-style: solid; border-width: 1px; display: block; }
+.file-upload.uploaded .file-help { display: none; }
+
+/* Ensure upload area hidden in locked state */
+body.locked .upload-area { display: none !important; }
+
 /* Summary Cards */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin: 20px 0;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 24px 0 12px 0; /* increased top margin for separation */
+  align-items: start;
 }
 .summary-card {
   background: var(--surface);
-  padding: 20px;
-  border-radius: 14px;
+  padding: 8px;
+  border-radius: 10px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
   text-align: center;
-  transition: transform .2s, opacity 0.2s;
+  transition: transform .12s, opacity .12s;
   cursor: grab;
   position: relative;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .summary-card:active { cursor: grabbing; }
-.summary-card.dragging { opacity: 0.5; transform: scale(0.95); }
-.summary-card:hover { transform: translateY(-3px); }
+.summary-card.dragging { opacity: 0.5; transform: scale(0.98); }
+.summary-card:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(0,0,0,0.05); }
 .summary-card .close-btn {
   position: absolute;
-  top: 5px;
+  top: 6px;
   right: 8px;
-  font-size: 14px;
+  font-size: 11px;
   color: var(--muted);
   cursor: pointer;
   display: none;
 }
 .summary-card:hover .close-btn { display: block; }
 .summary-card .val {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--primary);
-  margin-top: 8px;
+  margin-top: 4px;
   cursor: pointer;
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 3px;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
-.summary-card .lbl { font-size: 14px; color: var(--muted); font-weight: 600; }
+.summary-card .lbl { font-size: 11px; color: var(--muted); font-weight: 600; line-height:1; }
+
+/* Larger screens: slightly bigger cards */
+@media (min-width: 1400px) {
+  .summary-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .summary-card .val { font-size: 16px; }
+}
+
+/* Small screens: compact and single-column-ish */
+@media (max-width: 520px) {
+  .summary-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+  .summary-card { padding: 6px; min-height: 56px; }
+  .summary-card .val { font-size: 14px; }
+}
+
+/* Optional tighter view for very dense dashboards */
+body.compact .summary-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+body.compact .summary-card { padding: 6px; border-radius: 8px; min-height: 56px; }
+body.compact .summary-card .val { font-size: 13px; }
+body.compact .summary-card .lbl { font-size: 10px; }
 
 .notification-toast {
   position: fixed;
@@ -269,6 +313,25 @@ h2 {
   padding: 6px 10px;
 }
 
+/* Cards modal */
+.cards-modal { position: fixed; inset: 0; z-index: 25000; display: none; align-items: center; justify-content: center; }
+.cards-modal .cards-modal-backdrop { position:absolute; inset:0; background: rgba(0,0,0,0.35); }
+.cards-modal .cards-modal-body { position: relative; width: min(980px, 96%); background: var(--surface); border-radius:12px; padding:16px; box-shadow: var(--shadow); z-index: 1; }
+.cards-modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:12px; }
+.cards-list { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:10px; max-height: 50vh; overflow:auto; padding:6px; }
+.cards-list-item { background: var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; transition:transform .08s; }
+.cards-list-item:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,0.06); }
+.cards-list-item.selected { border: 2px solid var(--primary); box-shadow: 0 10px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
+.cards-list-item .lbl { font-weight:700; color:var(--text); font-size:13px }
+.cards-list-item .val { font-weight:800; color:var(--primary); font-size:16px }
+.btn-small { background:transparent; border:none; font-size:18px; cursor:pointer; }
+.btn-primary { background:var(--primary); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+
+@media (max-width:640px) {
+  .cards-list { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); }
+}
+
+
 select, input, button {
   padding: 8px 12px;
   font-size: 14px;
@@ -309,10 +372,10 @@ button:hover { background: var(--primaryHover); }
   flex-wrap: wrap;
   gap: 12px;
   background: var(--surface);
-  padding: 16px;
+  padding: 16px 16px 18px 16px; /* extra bottom padding */
   border-radius: 14px;
   box-shadow: var(--shadow);
-  margin: 20px 0;
+  margin: 20px 0 22px 0; /* larger gap below navbar */
   justify-content: center;
   border: 1px solid var(--border);
 }
@@ -807,148 +870,77 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
     <button id="themeToggle" style="background:transparent; border:none; font-size:20px; cursor:pointer; padding:0; display:flex; align-items:center;" title="Toggle Dark Mode">🌙</button>
     <button id="reUploadBtn" style="display:none; background:var(--primary); color:#fff; border:none; padding:6px 15px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:var(--shadow); transition:transform 0.2s;" onclick="reUpload()">🔄 Re-Upload</button>
   </div>
+
+  <div class="filters" id="topFilters" style="margin-top:12px; justify-content:center;">
+   <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे और View Info पर क्लिक करें।">
+   <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
+   <button id="resetBtn">रीसेट करें</button>
+   <button id="lockBtn">लॉक करें</button>
+   <button id="unlockBtn">अनलॉक करें</button>
+  </div>
+
+  <div class="navbar" style="margin:12px 0 12px 0;">
+   <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
+   <div class="nav-dropdown">
+     <div class="nav-item" onclick="toggleReports(this)">प्रतिक्रियाएँ</div>
+     <div class="nav-submenu" id="reportsSubmenu">
+      <div class="nav-item" onclick="openTab('reportBody', this)">प्रकार-विशेष eKYC रिपोर्ट</div>
+      <div class="nav-item" onclick="openTab('mobileReport', this)">मोबाइल रजिस्टरेशन स्थिति</div>
+      <div class="nav-item" onclick="openTab('refillReport', this)">Penging eKYC vs रिफिल</div>
+      <div class="nav-item" onclick="openTab('completedReport', this)">पूर्ण eKYC टाइमलाइन</div>
+       <div class="nav-item" onclick="openTab('nilRefillReport', this)">Nil Refill (FY 25-26)</div>
+      <div class="nav-item" onclick="openTab('svReport', this)">SV Generation Report</div>
+      <div class="nav-item" onclick="openTab('sbcDbcReport', this)">SBC DBC Report vs eKYC</div>
+      <div class="nav-item" onclick="openTab('pendingEkycReport', this)">Pending eKYC vs Type</div>
+       <div class="nav-item" onclick="openTab('beneficiaryTypeReport', this)">प्राप्तकर्ता प्रकार</div>
+       <div class="nav-item" onclick="openTab('bookingSourceReport', this)">बुकिंग स्रोत</div>
+       <div class="nav-item" onclick="openTab('topAreas', this)">टॉप 5 क्षेत्र</div>
+     <div class="nav-item" onclick="openTab('areaEkycProgress', this)">क्षेत्र-विशेष eKYC प्रगति</div>
+     <div class="nav-item" onclick="openTab('refillBuckets', this)">Refill Recency Buckets</div>
+     <div class="nav-item" onclick="openTab('bookingSourceCompletion', this)">बुकिंग स्रोत पूर्णता</div>
+     <div class="nav-item" onclick="openTab('dataQualityReport', this)">डेटा गुणवत्ता</div>
+       <div class="nav-item" onclick="openTab('trendAnalysisReport', this)">Trend Analysis</div>
+   </div>
+   </div>
+   <div class="nav-item" onclick="showRequest(this)">उपभोक्ता अनुरोध</div>
+   <div class="nav-item active" onclick="showAbout(this)">डैशबोर्ड के बारे में</div>
+   <div class="nav-item" id="toggleCardsBtn">📊 कार्ड दिखाएं</div>
+  </div>
 </div>
 
-<div class="file-upload drop-zone" id="dropZone">
-  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
-  <div style="font-weight:bold;margin-bottom:10px;font-size:18px">फ़ाइल यहाँ ड्राप करें या क्लिक करके अपलोड करें</div>
-  <div class="file-help">फ़ाइल अपलोड करने के लिए: कृपया अपनी CSV फ़ाइल <strong>cDCMS</strong> से डाउनलोड करें। <br> <strong>रास्ता</strong> - <strong>cDCMS</strong> - ConsumerManagement/ConsumerDetails/SearchConsumer -<strong>Search</strong> पर क्लिक करें फिर <strong>Export to Excel</strong> पर क्लिक करें।</div>
-  <div style="margin-top:15px; font-size:12px; color:var(--muted);">
-    अगर डैशबोर्ड सही से नहीं दिख रहा? <a href="javascript:void(0)" onclick="event.stopPropagation(); reUpload();" style="color:var(--primary); text-decoration:underline;">यहाँ क्लिक करके डेटा साफ़ करें</a>
+
+<div class="cards-modal" id="cardsModal" aria-hidden="true">
+  <div class="cards-modal-backdrop" id="cardsModalBackdrop"></div>
+  <div class="cards-modal-body" role="dialog" aria-modal="true" aria-labelledby="cardsModalTitle">
+    <div class="cards-modal-head">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="cardsModalTitle" style="font-weight:800">रिपोर्ट (कार्ड)</div>
+        <div style="color:var(--muted);font-size:13px">किसी कार्ड पर क्लिक करें → फ़िल्टर लागू करें और नीचे सूचि दिखेगी</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-small" id="closeCardsModalBtn">✕</button>
+      </div>
+    </div>
+    <div class="cards-list" id="cardsList">
+      <!-- populated dynamically -->
+    </div>
   </div>
 </div>
 
-<div class="center-btn-wrap">
-  <button id="toggleCardsBtn">कार्ड छुपाएं / दिखाएं</button>
+<div class="upload-area">
+  <div class="file-upload drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
+    <div style="font-weight:bold;margin-bottom:10px;font-size:18px">फ़ाइल यहाँ ड्राप करें या क्लिक करके अपलोड करें</div>
+    <div class="file-help">फ़ाइल अपलोड करने के लिए: कृपया अपनी CSV फ़ाइल <strong>cDCMS</strong> से डाउनलोड करें। <br> <strong>रास्ता</strong> - <strong>cDCMS</strong> - ConsumerManagement/ConsumerDetails/SearchConsumer -<strong>Search</strong> पर क्लिक करें फिर <strong>Export to Excel</strong> पर क्लिक करें।</div>
+    <div style="margin-top:15px; font-size:12px; color:var(--muted);">
+      अगर डैशबोर्ड सही से नहीं दिख रहा? <a href="javascript:void(0)" onclick="event.stopPropagation(); reUpload();" style="color:var(--primary); text-decoration:underline;">यहाँ क्लिक करके डेटा साफ़ करें</a>
+    </div>
+  </div>
 </div>
 
-<div id="summaryCards" class="summary-grid" style="display:none">
-  <div class="summary-card" draggable="true" data-id="sumTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल उपभोक्ता</div>
-    <div class="val" id="sumTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumUjjwala">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला उपभोक्ता</div>
-    <div class="val" id="sumUjjwala">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumTotalEkycPct">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल eKYC %</div>
-    <div class="val" id="sumTotalEkycPct">0%</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumPmuyEkycPct">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला eKYC %</div>
-    <div class="val" id="sumPmuyEkycPct">0%</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumSbcConsumerTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">SBC कुल उपभोक्ता</div>
-    <div class="val" id="sumSbcConsumerTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumSbcConsumerPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">SBC उज्ज्वला उपभोक्ता</div>
-    <div class="val" id="sumSbcConsumerPMUY">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumDBCTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल DBC उपभोक्ता</div>
-    <div class="val" id="sumDBCTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumDBCPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला DBC उपभोक्ता</div>
-    <div class="val" id="sumDBCPMUY">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumTotalDbcPct">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल DBC %</div>
-    <div class="val" id="sumTotalDbcPct">0%</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumPmuyDbcPct">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला DBC %</div>
-    <div class="val" id="sumPmuyDbcPct">0%</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumPending">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">लंबित eKYC</div>
-    <div class="val" id="sumPending">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumUjjwalaPending">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला लंबित eKYC</div>
-    <div class="val" id="sumUjjwalaPending">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumCompletedMonthTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल संपन्न eKYC चालू माह</div>
-    <div class="val" id="sumCompletedMonthTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumCompletedMonthPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला संपन्न eKYC चालू माह</div>
-    <div class="val" id="sumCompletedMonthPMUY">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumEkycYesterday">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल संपन्न eKYC कल</div>
-    <div class="val" id="sumEkycYesterday">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumEkycToday">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">कुल संपन्न eKYC आज</div>
-    <div class="val" id="sumEkycToday">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumTodayEkycPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला संपन्न eKYC आज</div>
-    <div class="val" id="sumTodayEkycPMUY">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumSVMonth">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">SV निर्गत (माह)</div>
-    <div class="val" id="sumSVMonth">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumUjjwalaSVMonth">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">उज्ज्वला SV निर्गत (माह)</div>
-    <div class="val" id="sumUjjwalaSVMonth">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumPendingSvTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">लंबित SV कुल</div>
-    <div class="val" id="sumPendingSvTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumPendingSvPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">लंबित SV उज्ज्वला</div>
-    <div class="val" id="sumPendingSvPMUY">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumNoMobile">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">मोबाइल अनरजिस्टर्ड</div>
-    <div class="val" id="sumNoMobile">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumNCTC">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">NCTC उपभोक्ता</div>
-    <div class="val" id="sumNCTC">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumNilRefillTotal">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">eKYC संपन्न vs शुन्य रिफिल कुल</div>
-    <div class="val" id="sumNilRefillTotal">0</div>
-  </div>
-  <div class="summary-card" draggable="true" data-id="sumNilRefillPMUY">
-    <span class="close-btn" onclick="hideCard(this)">✕</span>
-    <div class="lbl">eKYC संपन्न vs शुन्य रिफिल उज्ज्वला</div>
-    <div class="val" id="sumNilRefillPMUY">0</div>
-  </div>
-  </div>
+
+
+
 
 <div id="uploadMsg" class="flash-msg">फाइल सफलतापूर्वक अपलोड की गई।</div>
 
@@ -956,14 +948,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 <div id="flashMobile" class="alert-msg">बुकिंग, DAC, सब्सिडी से संबंधित सेवाओं के लिए मोबाइल नंबर रजिस्टर करना ज़रूरी है।</div>
 
 <div id="bookView"></div>
-
-<div class="filters" id="topFilters">
- <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे और View Info पर क्लिक करें।">
- <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
- <button id="resetBtn">रीसेट करें</button>
- <button id="lockBtn">लॉक करें</button>
-  <button id="unlockBtn">अनलॉक करें</button>
-</div>
 
 <!-- PIN Modal -->
 <div id="pinModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
@@ -1002,32 +986,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   </div>
 </div>
 
-<div class="navbar">
- <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
- <div class="nav-dropdown">
-   <div class="nav-item" onclick="toggleReports(this)">प्रतिक्रियाएँ</div>
-   <div class="nav-submenu" id="reportsSubmenu">
-    <div class="nav-item" onclick="openTab('reportBody', this)">प्रकार-विशेष eKYC रिपोर्ट</div>
-    <div class="nav-item" onclick="openTab('mobileReport', this)">मोबाइल रजिस्टरेशन स्थिति</div>
-    <div class="nav-item" onclick="openTab('refillReport', this)">Penging eKYC vs रिफिल</div>
-    <div class="nav-item" onclick="openTab('completedReport', this)">पूर्ण eKYC टाइमलाइन</div>
-     <div class="nav-item" onclick="openTab('nilRefillReport', this)">Nil Refill (FY 25-26)</div>
-    <div class="nav-item" onclick="openTab('svReport', this)">SV Generation Report</div>
-    <div class="nav-item" onclick="openTab('sbcDbcReport', this)">SBC DBC Report vs eKYC</div>
-    <div class="nav-item" onclick="openTab('pendingEkycReport', this)">Pending eKYC vs Type</div>
-     <div class="nav-item" onclick="openTab('beneficiaryTypeReport', this)">प्राप्तकर्ता प्रकार</div>
-     <div class="nav-item" onclick="openTab('bookingSourceReport', this)">बुकिंग स्रोत</div>
-     <div class="nav-item" onclick="openTab('topAreas', this)">टॉप 5 क्षेत्र</div>
-   <div class="nav-item" onclick="openTab('areaEkycProgress', this)">क्षेत्र-विशेष eKYC प्रगति</div>
-   <div class="nav-item" onclick="openTab('refillBuckets', this)">Refill Recency Buckets</div>
-   <div class="nav-item" onclick="openTab('bookingSourceCompletion', this)">बुकिंग स्रोत पूर्णता</div>
-   <div class="nav-item" onclick="openTab('dataQualityReport', this)">डेटा गुणवत्ता</div>
-     <div class="nav-item" onclick="openTab('trendAnalysisReport', this)">Trend Analysis</div>
-   </div>
- </div>
- <div class="nav-item" onclick="showRequest(this)">उपभोक्ता अनुरोध</div>
- <div class="nav-item active" onclick="showAbout(this)">डैशबोर्ड के बारे में</div>
-</div>
+
 
 <div class="active-report-container" id="reportContainer">
  <div id="reportHeader" class="report-header"></div>
@@ -1250,6 +1209,7 @@ setFontSize(savedFontSize);
 // Summary Card Management (Drag, Drop, Hide)
 function initSummaryCards() {
   const container = el('summaryCards');
+  if(!container) return; // grid removed; nothing to initialize
   const cards = container.querySelectorAll('.summary-card');
   let draggedCard = null;
 
@@ -1405,6 +1365,9 @@ const reportTitles={
   trendAnalysisReport:'Trend Analysis'
 };
 const fileInput=el('fileInput'),uploadMsg=el('uploadMsg');
+// Keep a template of original drop zone so we can restore it
+const dropZoneEl = el('dropZone');
+const dropZoneTemplate = dropZoneEl ? dropZoneEl.innerHTML : '';
 const flashEKYC=el('flashEKYC'),flashMobile=el('flashMobile');
 const ekycFilter=el('ekycFilter'),areaFilter=el('areaFilter'),natureFilter=el('natureFilter'),mobileStatusFilter=el('mobileStatusFilter');
 const consumerStatusFilter=el('consumerStatusFilter'),connectionTypeFilter=el('connectionTypeFilter'),pfmsFilter=el('pfmsFilter');
@@ -1415,7 +1378,7 @@ const tableSearch=el('tableSearch'),addColumn=el('addColumn'),removeColumn=el('r
 const dataTable=el('dataTable'),prevPage=el('prevPage'),nextPage=el('nextPage');
 const pageInput=el('pageInput'),totalPagesSpan=el('totalPages');
 const requestMobile=el('requestMobile'),requestType=el('requestType'),requestSend=el('requestSend');
-const lockBtn=el('lockBtn'),unlockBtn=el('unlockBtn');
+const lockBtn=el('lockBtn'),unlockBtn=el('unlockBtn'),toggleCardsBtn=el('toggleCardsBtn');
 
 let data=[],filteredData=[],allColumns=[],visibleCols=['Consumer No','Consumer Name','Mobile No','Consumer Nature','EKYC Status','Delivery Area','LastRefillDate','EKYC Date'];
 let currentPage=1;const pageSize=25;
@@ -1448,7 +1411,13 @@ function parseCSV(t){
 }
 function parseInputDate(s){if(!s)return null;const p=s.split('-');if(p.length<3)return null;const d=new Date(+p[0],+p[1]-1,+p[2]);return isNaN(d)?null:d}
 
-fileInput.onchange=function(){if(!this.files[0])return;handleFile(this.files[0])};
+function attachFileInputHandler(){
+  const fi = el('fileInput');
+  if(!fi) return;
+  fi.onchange = function(){ try{ console.log('file input change', this.files && this.files.length); }catch(e){} if(!this.files || !this.files[0]) return; handleFile(this.files[0]); };
+}
+// attach now for initial input if present
+attachFileInputHandler();
 
 function handleFile(f){
  const loading = el('loadingOverlay');
@@ -1525,9 +1494,28 @@ function handleFile(f){
 
    uploadMsg.style.display='block';
    setTimeout(()=>uploadMsg.style.display='none',2500);
-   const fu=el('dropZone'); if(fu)fu.style.display='none';
+   const fu = el('dropZone');
+   if(fu) {
+     // turn the drop zone into a compact uploaded summary (keeps same location)
+     fu.classList.add('uploaded');
+     fu.innerHTML = `
+       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+         <div style="font-weight:600;color:var(--muted);">फ़ाइल अपलोड हो चुकी है — ${data.length} रिकॉर्ड</div>
+         <div style="display:flex;gap:8px;align-items:center;">
+           <button id="reUploadInline" style="background:var(--primary); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Re-Upload</button>
+           <button id="clearUploadInline" style="background:transparent; color:var(--muted); border:1px solid var(--border); padding:6px 10px; border-radius:8px; cursor:pointer;">Clear</button>
+         </div>
+       </div>
+     `;
+     const rInline = el('reUploadInline'); if(rInline) rInline.onclick = () => { const f = el('fileInput'); if(f) f.click(); };
+     const cInline = el('clearUploadInline'); if(cInline) cInline.onclick = () => resetToUploadState();
+     // when we replace dropZone contents we removed the original file input; reattach handler when resetting
+
+   }
    const ru=el('reUploadBtn'); if(ru)ru.style.display='block';
-   el('summaryCards').style.display='grid';
+   // Auto-hide cards after upload; show only on user click
+   const sc = el('summaryCards'); if(sc) sc.style.display = 'none';
+   const tbtn = el('toggleCardsBtn'); if(tbtn) tbtn.innerHTML = '📊 कार्ड दिखाएं';
    initDynamic();
    initSummaryCards(); // Initialize drag & drop and visibility
    customFilter=null;
@@ -1559,9 +1547,28 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
       data = JSON.parse(cached);
       if (data && data.length > 0) {
-        el('dropZone').style.display = 'none';
+        // Render an inline uploaded summary in the same upload location
+        const fu = el('dropZone');
+        if(fu) {
+          fu.classList.add('uploaded');
+          fu.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+              <div style="font-weight:600;color:var(--muted);">Cached: डेटा पहले से मौजूद — ${data.length} रिकॉर्ड</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button id="reUploadInline" style="background:var(--primary); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Re-Upload</button>
+                <button id="clearUploadInline" style="background:transparent; color:var(--muted); border:1px solid var(--border); padding:6px 10px; border-radius:8px; cursor:pointer;">Clear</button>
+              </div>
+            </div>
+          `;
+          const rInline = el('reUploadInline'); if(rInline) rInline.onclick = () => { const f = el('fileInput'); if(f) f.click(); };
+          const cInline = el('clearUploadInline'); if(cInline) cInline.onclick = () => { localStorage.removeItem('cachedData'); resetToUploadState(); };
+          // ensure file input handler is available after any reset
+          attachFileInputHandler();
+        }
         const ru=el('reUploadBtn'); if(ru)ru.style.display='block';
-        el('summaryCards').style.display = 'grid';
+        // Keep cards hidden by default; user can click to view
+        const sc = el('summaryCards'); if(sc) sc.style.display = 'none';
+        const tbtn = el('toggleCardsBtn'); if(tbtn) tbtn.innerHTML = '📊 कार्ड दिखाएं';
         initDynamic();
         initSummaryCards();
         applyAll();
@@ -1578,23 +1585,29 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+
+const dz=el('dropZone');
+dz.onclick=()=>{ const f = el('fileInput'); if(f) f.click(); };
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
+dz.ondragleave=()=>dz.classList.remove('over');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
+
+// reattach handler when resetToUploadState restores the drop zone
 function resetToUploadState() {
   data = [];
-  el('dropZone').style.display = 'block';
+  const dz = el('dropZone'); if(dz) { dz.style.display = 'block'; dz.classList.remove('uploaded'); dz.innerHTML = dropZoneTemplate; }
   const ru=el('reUploadBtn'); if(ru)ru.style.display='none';
-  el('summaryCards').style.display = 'none';
+  const sc = el('summaryCards'); if(sc) sc.style.display = 'none';
+  const tbtn = el('toggleCardsBtn'); if(tbtn) tbtn.innerHTML='📊 कार्ड दिखाएं';
   el('reportContainer').style.display = 'none';
   el('consumerDataContainer').style.display = 'none';
   el('requestContainer').style.display = 'none';
   el('dataUpdateMsg').style.display = 'none';
   const ac=el('aboutContainer'); if(ac) ac.style.display='block';
+  // reattach file input handler for the new input element
+  attachFileInputHandler();
 }
-
-const dz=el('dropZone');
-dz.onclick=()=>fileInput.click();
-dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
-dz.ondragleave=()=>dz.classList.remove('over');
-dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
 
 function updateMaxDateMsg(){
  if(!data || data.length===0)return;
@@ -1673,30 +1686,51 @@ function updateSummaryCards(){
     return sd >= sixMonthsAgo;
   };
 
-  const setCard = (id, val, fn) => {
+  // Map to keep original card actions (apply filter functions)
+  const cardActions = {};
+  // expose globally for modal click handlers
+  window.cardActions = cardActions;
+
+  const setCard = (id, val, fn, label) => {
     const e = el(id);
     if (e) {
       e.textContent = val;
-      if (fn) e.onclick = fn;
+    }
+    if (fn) {
+      // store metadata for modal usage (fn, label, current value)
+      cardActions[id] = { fn: fn, label: label || (e ? (e.parentElement.querySelector('.lbl')||{}).textContent : id), value: val };
+      // keep grid click behaviour (if element exists) to open first result's book
+      if (e) {
+        e.onclick = () => {
+          try { fn(); } catch (err) { console.error(err); }
+          setTimeout(() => {
+            if (filteredData && filteredData.length > 0) {
+              const cdc = el('consumerDataContainer'); if(cdc) cdc.style.display = 'block';
+              const first = filteredData[0]['Consumer No'];
+              if (first) openBook(first);
+            }
+          }, 80);
+        };
+      }
     }
   };
 
-  setCard('sumTotal', d.length, () => resetFilters());
-  setCard('sumUjjwala', d.filter(isUjjwala).length, () => { resetFilters(); applyAll(isUjjwala); });
-  setCard('sumEkycToday', d.filter(isEkycToday).length, () => { resetFilters(); applyAll(isEkycToday); });
-  setCard('sumEkycYesterday', d.filter(isEkycYesterday).length, () => { resetFilters(); applyAll(isEkycYesterday); });
-  setCard('sumPending', d.filter(x => x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); ekycFilter.value = 'Pending'; applyAll(); });
-  setCard('sumUjjwalaPending', d.filter(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed'); });
-  setCard('sumDBCTotal', d.filter(isDBC).length, () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); });
-  setCard('sumDBCPMUY', d.filter(x => isDBC(x) && isUjjwala(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); });
-  setCard('sumNoMobile', d.filter(x => !x['Mobile No']).length, () => { resetFilters(); mobileStatusFilter.value = 'Unregistered'; applyAll(); });
-  setCard('sumCompletedMonthTotal', d.filter(isCompletedThisMonth).length, () => { resetFilters(); applyAll(isCompletedThisMonth); });
-  setCard('sumCompletedMonthPMUY', d.filter(x => isUjjwala(x) && isCompletedThisMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isCompletedThisMonth(x)); });
-  setCard('sumNilRefillPMUY', d.filter(x => isUjjwala(x) && isNilRefillFY(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isNilRefillFY(x)); });
-  setCard('sumNilRefillTotal', d.filter(isNilRefillFY).length, () => { resetFilters(); applyAll(isNilRefillFY); });
-  setCard('sumNCTC', d.filter(x => (x['PFMSBeneficiaryType'] || '') === 'NCTC').length, () => { resetFilters(); pfmsFilter.value = 'NCTC'; applyAll(); });
-  setCard('sumSVMonth', d.filter(isSVMonth).length, () => { resetFilters(); applyAll(isSVMonth); });
-  setCard('sumUjjwalaSVMonth', d.filter(x => isUjjwala(x) && isSVMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSVMonth(x)); });
+  setCard('sumTotal', d.length, () => resetFilters(), 'कुल उपभोक्ता');
+  setCard('sumUjjwala', d.filter(isUjjwala).length, () => { resetFilters(); applyAll(isUjjwala); }, 'उज्ज्वला उपभोक्ता');
+  setCard('sumEkycToday', d.filter(isEkycToday).length, () => { resetFilters(); applyAll(isEkycToday); }, 'कुल संपन्न eKYC आज');
+  setCard('sumEkycYesterday', d.filter(isEkycYesterday).length, () => { resetFilters(); applyAll(isEkycYesterday); }, 'कुल संपन्न eKYC कल');
+  setCard('sumPending', d.filter(x => x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); ekycFilter.value = 'Pending'; applyAll(); }, 'लंबित eKYC');
+  setCard('sumUjjwalaPending', d.filter(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed').length, () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] !== 'Completed'); }, 'उज्ज्वला लंबित eKYC');
+  setCard('sumDBCTotal', d.filter(isDBC).length, () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); }, 'कुल DBC उपभोक्ता');
+  setCard('sumDBCPMUY', d.filter(x => isDBC(x) && isUjjwala(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); }, 'उज्ज्वला DBC उपभोक्ता');
+  setCard('sumNoMobile', d.filter(x => !x['Mobile No']).length, () => { resetFilters(); mobileStatusFilter.value = 'Unregistered'; applyAll(); }, 'मोबाइल अनरजिस्टर्ड');
+  setCard('sumCompletedMonthTotal', d.filter(isCompletedThisMonth).length, () => { resetFilters(); applyAll(isCompletedThisMonth); }, 'कुल संपन्न eKYC चालू माह');
+  setCard('sumCompletedMonthPMUY', d.filter(x => isUjjwala(x) && isCompletedThisMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isCompletedThisMonth(x)); }, 'उज्ज्वला संपन्न eKYC चालू माह');
+  setCard('sumNilRefillPMUY', d.filter(x => isUjjwala(x) && isNilRefillFY(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isNilRefillFY(x)); }, 'eKYC संपन्न vs शुन्य रिफिल उज्ज्वला');
+  setCard('sumNilRefillTotal', d.filter(isNilRefillFY).length, () => { resetFilters(); applyAll(isNilRefillFY); }, 'eKYC संपन्न vs शुन्य रिफिल कुल');
+  setCard('sumNCTC', d.filter(x => (x['PFMSBeneficiaryType'] || '') === 'NCTC').length, () => { resetFilters(); pfmsFilter.value = 'NCTC'; applyAll(); }, 'NCTC उपभोक्ता');
+  setCard('sumSVMonth', d.filter(isSVMonth).length, () => { resetFilters(); applyAll(isSVMonth); }, 'SV निर्गत (माह)');
+  setCard('sumUjjwalaSVMonth', d.filter(x => isUjjwala(x) && isSVMonth(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSVMonth(x)); }, 'उज्ज्वला SV निर्गत (माह)');
 
   const totalEkyc = d.filter(x => x['EKYC Status'] === 'Completed').length;
   const totalPmuy = d.filter(isUjjwala).length;
@@ -1708,15 +1742,15 @@ function updateSummaryCards(){
   const pendingSvTotal = d.filter(isPendingSV).length;
   const pendingSvPmuy = d.filter(x => isUjjwala(x) && isPendingSV(x)).length;
 
-  setCard('sumTotalEkycPct', (d.length > 0 ? (totalEkyc / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); ekycFilter.value = 'Completed'; applyAll(); });
-  setCard('sumPmuyEkycPct', (totalPmuy > 0 ? (pmuyEkyc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] === 'Completed'); });
-  setCard('sumTodayEkycPMUY', d.filter(x => isUjjwala(x) && isEkycToday(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isEkycToday(x)); });
-  setCard('sumSbcConsumerPMUY', sbcPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSBC(x)); });
-  setCard('sumSbcConsumerTotal', sbcTotal, () => { resetFilters(); connectionTypeFilter.value = 'SBC'; applyAll(); });
-  setCard('sumPmuyDbcPct', (totalPmuy > 0 ? (pmuyDbc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); });
-  setCard('sumTotalDbcPct', (d.length > 0 ? (dbcTotal / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); });
-  setCard('sumPendingSvTotal', pendingSvTotal, () => { resetFilters(); applyAll(isPendingSV); });
-  setCard('sumPendingSvPMUY', pendingSvPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isPendingSV(x)); });
+  setCard('sumTotalEkycPct', (d.length > 0 ? (totalEkyc / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); ekycFilter.value = 'Completed'; applyAll(); }, 'कुल eKYC %');
+  setCard('sumPmuyEkycPct', (totalPmuy > 0 ? (pmuyEkyc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && x['EKYC Status'] === 'Completed'); }, 'उज्ज्वला eKYC %');
+  setCard('sumTodayEkycPMUY', d.filter(x => isUjjwala(x) && isEkycToday(x)).length, () => { resetFilters(); applyAll(x => isUjjwala(x) && isEkycToday(x)); }, 'उज्ज्वला संपन्न eKYC आज');
+  setCard('sumSbcConsumerPMUY', sbcPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isSBC(x)); }, 'SBC उज्ज्वला उपभोक्ता');
+  setCard('sumSbcConsumerTotal', sbcTotal, () => { resetFilters(); connectionTypeFilter.value = 'SBC'; applyAll(); }, 'SBC कुल उपभोक्ता');
+  setCard('sumPmuyDbcPct', (totalPmuy > 0 ? (pmuyDbc / totalPmuy * 100) : 0).toFixed(1) + '%', () => { resetFilters(); applyAll(x => isUjjwala(x) && isDBC(x)); }, 'उज्ज्वला DBC %');
+  setCard('sumTotalDbcPct', (d.length > 0 ? (dbcTotal / d.length * 100) : 0).toFixed(1) + '%', () => { resetFilters(); connectionTypeFilter.value = 'DBC'; applyAll(); }, 'कुल DBC %');
+  setCard('sumPendingSvTotal', pendingSvTotal, () => { resetFilters(); applyAll(isPendingSV); }, 'लंबित SV कुल');
+  setCard('sumPendingSvPMUY', pendingSvPmuy, () => { resetFilters(); applyAll(x => isUjjwala(x) && isPendingSV(x)); }, 'लंबित SV उज्ज्वला');
 }
 
 function copyToClipboard(text,btn){
@@ -1782,28 +1816,70 @@ resetBtn.onclick=()=>{
 };
 requestSend.onclick=()=>{const num=(requestMobile&&requestMobile.value||'').trim();const type=(requestType&&requestType.value)||'eKYC';const url=buildRequestWhatsAppLink(num,type);if(!url)return alert('Valid mobile number दर्ज करें');window.open(url,'_blank')};
 
-toggleCardsBtn.onclick=()=>{
-  const sc = el('summaryCards');
-  if(sc.style.display === 'none') {
-    sc.style.display = 'grid';
-    toggleCardsBtn.textContent = 'कार्ड छुपाएं';
-  } else {
-    sc.style.display = 'none';
-    toggleCardsBtn.textContent = 'कार्ड दिखाएं';
-  }
-};
+toggleCardsBtn.onclick=()=>{ openCardsModal(); };
 
-lockBtn.onclick=()=>{
+function openCardsModal(){
+  const modal = el('cardsModal');
+  const list = el('cardsList');
+  const tbtn = el('toggleCardsBtn');
+  if(!modal || !list) return;
+  // ensure summary cards are up-to-date
+  updateSummaryCards();
+  // build list
+  list.innerHTML = '';
+  // populate from stored cardActions (we removed the inline grid)
+  Object.entries(window.cardActions || {}).forEach(([id, meta])=>{
+    const lbl = (meta && meta.label) || id;
+    const val = (meta && (meta.value !== undefined ? meta.value : '')) || '';
+    const item = document.createElement('div');
+    item.className = 'cards-list-item';
+    item.innerHTML = `<div class="lbl">${lbl}</div><div class="val">${val}</div>`;
+    item.dataset.id = id;
+    item.onclick = (ev)=>{
+      ev.stopPropagation();
+      if(meta && typeof meta.fn === 'function'){
+        try{ meta.fn(); }catch(e){console.error(e)}
+        const container = el('consumerDataContainer'); if(container) container.style.display='';
+        applyAll();
+        // keep modal open to allow multiple selections; mark item as selected
+        item.classList.add('selected');
+        if(container) container.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    };
+    list.appendChild(item);
+  });
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden','false');
+  // focus first item for keyboard users
+  const first = list.querySelector('.cards-list-item'); if(first){ first.tabIndex = 0; first.focus(); }
+}
+
+function closeCardsModal(){
+  const modal = el('cardsModal'); if(!modal) return; modal.style.display='none'; modal.setAttribute('aria-hidden','true');
+}
+// close with Escape key
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ const m = el('cardsModal'); if(m && m.style.display === 'flex') closeCardsModal(); } });
+
+const _closeBtn = el('closeCardsModalBtn'); if(_closeBtn) _closeBtn.onclick = closeCardsModal;
+const _backdrop = el('cardsModalBackdrop'); if(_backdrop) _backdrop.onclick = closeCardsModal;
+
+
+
+if (lockBtn) lockBtn.addEventListener('click', ()=>{
+  try{ console.log('lockBtn clicked'); }catch(e){}
   if(!confirm('Dashboard को Lock करें?')) return;
   toggleLock(true);
-};
-unlockBtn.onclick=()=>{
+  try{ console.log('toggleLock(true) executed'); }catch(e){}
+});
+if (unlockBtn) unlockBtn.addEventListener('click', ()=>{
+  try{ console.log('unlockBtn clicked'); }catch(e){}
   const modal = el('pinModal');
   const input = el('pinInput');
+  if(!modal || !input){ console.warn('pin modal or input missing'); return; }
   input.value = '';
   modal.style.display = 'flex';
   input.focus();
-};
+});
 
 el('cancelPin').onclick=()=>{
   el('pinModal').style.display = 'none';
@@ -1929,15 +2005,38 @@ function autoLockDashboard() {
 }
 
 function toggleLock(isLocked) {
+  try{ console.log('toggleLock called:', isLocked); }catch(e){}
   isDashboardLocked = isLocked;
   if (!isLocked) lastActivityTime = Date.now(); // Reset timer on unlock
-  const inputs = [fileInput, consumerSearch, viewBtn, resetBtn, toggleCardsBtn, tableSearch, ekycFilter, areaFilter, natureFilter, mobileStatusFilter, consumerStatusFilter, connectionTypeFilter, pfmsFilter, refillFrom, refillTo, ekycFrom, ekycTo, sortBy, sortOrder, addColumn, removeColumn, requestMobile, requestType, requestSend];
-  inputs.forEach(i => { if(i) i.disabled = isLocked; });
+  try {
+    const ids = ['fileInput','consumerSearch','viewBtn','resetBtn','toggleCardsBtn','tableSearch','ekycFilter','areaFilter','natureFilter','mobileStatusFilter','consumerStatusFilter','connectionTypeFilter','pfmsFilter','refillFrom','refillTo','ekycFrom','ekycTo','sortBy','sortOrder','addColumn','removeColumn','requestMobile','requestType','requestSend'];
+    const inputs = ids.map(id => el(id)).filter(Boolean);
+    inputs.forEach(i => { if(i) i.disabled = isLocked; });
+  } catch (err) {
+    console.warn('toggleLock input toggle error', err);
+  }
+
   const navbar = document.querySelector('.navbar');
   if(navbar) navbar.style.pointerEvents = isLocked ? 'none' : 'auto';
   if(navbar) navbar.style.opacity = isLocked ? '0.6' : '1';
-  lockBtn.style.display = isLocked ? 'none' : 'inline-block';
-  unlockBtn.style.display = isLocked ? 'inline-block' : 'none';
+  if(lockBtn) lockBtn.style.display = isLocked ? 'none' : 'inline-block';
+  if(unlockBtn) unlockBtn.style.display = isLocked ? 'inline-block' : 'none';
+
+  // Add/remove a body-level class so CSS can forcibly hide upload UI in locked state
+  try{ if (isLocked) document.body.classList.add('locked'); else document.body.classList.remove('locked'); } catch(e){console.warn('body lock class error', e); }
+
+  // When locked, hide cards and ensure upload UI stays hidden; when unlocked, restore upload UI based on presence of data
+  const sc = el('summaryCards');
+  const tbtn = el('toggleCardsBtn');
+  if(isLocked) {
+    if(sc) sc.style.display = 'none';
+    if(tbtn) tbtn.innerHTML = '📊 कार्ड दिखाएं';
+    const ru = el('reUploadBtn'); if(ru) ru.style.display = 'none';
+  } else {
+    const dz = el('dropZone'); const ru = el('reUploadBtn');
+    if(data && data.length>0) { if(dz) dz.style.display='none'; if(ru) ru.style.display='block'; }
+    else { if(dz) dz.style.display='block'; if(ru) ru.style.display='none'; }
+  }
 }
 
 function resetFilters(){
