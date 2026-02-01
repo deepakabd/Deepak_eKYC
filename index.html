@@ -109,6 +109,26 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* Mobile view: remove fixed positioning to prevent freezing */
+@media (max-width: 768px) {
+  .sticky-header {
+    position: relative;
+    padding: 0 15px 12px 15px;
+  }
+  
+  .header-controls {
+    position: static !important;
+    transform: none !important;
+    justify-content: center;
+    margin: 10px 0;
+    width: 100%;
+  }
+  
+  body {
+    padding: 20px 15px; /* Reset top padding for mobile */
+  }
+}
+
 .top-msg {
   text-align: center;
   margin: 0 -20px 0 -20px;
@@ -875,10 +895,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   </div>
 
   <div class="navbar" style="margin:12px 0 12px 0;">
-   <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
-   <div id="dataUpdateMsg" class="data-update-msg" style="display:none; margin-right: 15px; padding: 4px 12px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
-    डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
-   </div>
    <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
    <div class="nav-dropdown">
      <div class="nav-item" onclick="toggleReports(this)">प्रतिक्रियाएँ</div>
@@ -904,6 +920,10 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
    <div class="nav-item" onclick="showRequest(this)">उपभोक्ता अनुरोध</div>
    <div class="nav-item active" onclick="showAbout(this)">डैशबोर्ड के बारे में</div>
    <div class="nav-item" id="toggleCardsBtn">📊 कार्ड दिखाएं</div>
+   <div id="dataUpdateMsg" class="data-update-msg" style="display:none; margin-right: 15px; padding: 4px 12px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
+    डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
+   </div>
+   <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
   </div>
 </div>
 
@@ -1497,17 +1517,7 @@ function handleFile(f){
    if(fu) {
      // turn the drop zone into a compact uploaded summary (keeps same location)
      fu.classList.add('uploaded');
-     fu.innerHTML = `
-       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-         <div style="font-weight:600;color:var(--muted);">फ़ाइल अपलोड हो चुकी है — ${data.length} रिकॉर्ड</div>
-         <div style="display:flex;gap:8px;align-items:center;">
-           <button id="reUploadInline" style="background:var(--primary); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Re-Upload</button>
-           <button id="clearUploadInline" style="background:transparent; color:var(--muted); border:1px solid var(--border); padding:6px 10px; border-radius:8px; cursor:pointer;">Clear</button>
-         </div>
-       </div>
-     `;
-     const rInline = el('reUploadInline'); if(rInline) rInline.onclick = () => { const f = el('fileInput'); if(f) f.click(); };
-     const cInline = el('clearUploadInline'); if(cInline) cInline.onclick = () => resetToUploadState();
+     fu.innerHTML = '';
      // when we replace dropZone contents we removed the original file input; reattach handler when resetting
 
    }
@@ -2042,6 +2052,7 @@ function resetFilters(){
  ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';mobileStatusFilter.value='';
  refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
  sortBy.value='';sortOrder.value='asc';
+ tableSearch.value='';
  customFilter=null;
  applyAll();
 }
