@@ -2655,10 +2655,10 @@ function openBook(no){
   const isPending = c['EKYC Status'] !== 'Completed';
   
   const groups = {
-    '👤 बुनियादी विवरण': ['Consumer No', 'Consumer Name', 'Mobile No', 'Consumer Status', 'Consumer Nature', 'Connection Type', 'Delivery Area'],
-    '✅ KYC जानकारी': ['EKYC Status', 'EKYC Date', 'EKYC Mode', 'Is KYC Completed', 'PFMSBeneficiaryType', 'PFMSBeneficiaryId', 'MaskedAadhar'],
-    '⛽ रिफिल और बुकिंग': ['LastRefillDate', 'Last Refill BookingSource', 'IVRS No.2', 'IVRS No.3', 'IVRS No.4'],
-    '📋 अन्य विवरण': ['LPG ID', 'Consumer Address', 'CTC Flag', 'CTC Date', 'MI Date', 'Safety Inspection Status', 'Safety Inspection Date', 'Hose Validity Date', 'Eligible For Subsidy', 'SL No.']
+    '👤 बुनियादी विवरण': ['Consumer No', 'LPG ID', 'Consumer Name', 'Consumer Status', 'Mobile No', 'IVRS No.2', 'IVRS No.3', 'IVRS No.4'],
+    '✅ KYC जानकारी': ['Is KYC Completed', 'Eligible For Subsidy', 'CTC Flag', 'CTC Date', 'PFMSBeneficiaryId', 'PFMSBeneficiaryType', 'BankAccountNo', 'BankIFSCCode', 'EKYC Date', 'EKYC Status', 'EKYC Mode', 'EKYC From', 'MaskedAadhar'],
+    '🔧 सुरक्षा जांच': ['Safety Inspection Status', 'Safety Inspection Date', 'Hose Validity Date', 'MI Date'],
+    '📋 कनेक्शन विवरण': ['Connection Type', 'Consumer Nature', 'SubNature Code', 'Delivery Area', 'SV Date', 'Consumer Address', 'LastRefillDate', 'Last Refill BookingSource']
   };
 
   const renderRow = (k) => {
