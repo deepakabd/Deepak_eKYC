@@ -856,10 +856,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 </div>
 <div class="sticky-header">
   <div class="top-msg">IVRS बुकिंग - 8888823456 | <strong>मिस्ड कॉल बुकिंग - 9493602222</strong> | WhatsApp बुकिंग - 9222201122</div>
-  <div id="dataUpdateMsg" class="data-update-msg" style="display:none">
-    डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
-    <span id="idleTimer" style="margin-left:15px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none;"></span>
-  </div>
   <h2>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</h2>
   <div class="header-controls" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); display: flex; align-items: center; gap: 12px;">
     <div class="font-controls" style="display: flex; gap: 5px; background: var(--surface); padding: 4px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
@@ -868,7 +864,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
       <button id="fontBig" title="Big Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:15px; cursor:pointer;">A+</button>
     </div>
     <button id="themeToggle" style="background:transparent; border:none; font-size:20px; cursor:pointer; padding:0; display:flex; align-items:center;" title="Toggle Dark Mode">🌙</button>
-    <button id="reUploadBtn" style="display:none; background:var(--primary); color:#fff; border:none; padding:6px 15px; border-radius:20px; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:var(--shadow); transition:transform 0.2s;" onclick="reUpload()">🔄 Re-Upload</button>
   </div>
 
   <div class="filters" id="topFilters" style="margin-top:12px; justify-content:center;">
@@ -880,6 +875,10 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   </div>
 
   <div class="navbar" style="margin:12px 0 12px 0;">
+   <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
+   <div id="dataUpdateMsg" class="data-update-msg" style="display:none; margin-right: 15px; padding: 4px 12px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
+    डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
+   </div>
    <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
    <div class="nav-dropdown">
      <div class="nav-item" onclick="toggleReports(this)">प्रतिक्रियाएँ</div>
@@ -2045,8 +2044,6 @@ function resetFilters(){
  sortBy.value='';sortOrder.value='asc';
  customFilter=null;
  applyAll();
- el('consumerDataContainer').style.display='none';
- showAbout();
 }
 
 function renderPage(){const t=Math.ceil(filteredData.length/pageSize)||1;totalPagesSpan.textContent=t;pageInput.value=currentPage;el('recordCount').textContent=filteredData.length;renderTable(filteredData.slice((currentPage-1)*pageSize,currentPage*pageSize))}
