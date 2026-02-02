@@ -876,7 +876,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 </div>
 <div class="sticky-header">
   <div class="top-msg">IVRS बुकिंग - 8888823456 | <strong>मिस्ड कॉल बुकिंग - 9493602222</strong> | WhatsApp बुकिंग - 9222201122</div>
-  <h2>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</h2>
+
   <div class="header-controls" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); display: flex; align-items: center; gap: 12px;">
     <div class="font-controls" style="display: flex; gap: 5px; background: var(--surface); padding: 4px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
       <button id="fontSmall" title="Small Font" style="width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bg); color:var(--text); border:1px solid var(--border); font-size:11px; cursor:pointer;">A-</button>
@@ -923,6 +923,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
    <div id="dataUpdateMsg" class="data-update-msg" style="display:none; margin-right: 15px; padding: 4px 12px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
     डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
    </div>
+   <div class="nav-item" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">Upload File</div>
    <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
   </div>
 </div>
@@ -949,11 +950,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 <div class="upload-area">
   <div class="file-upload drop-zone" id="dropZone">
     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
-    <div style="font-weight:bold;margin-bottom:10px;font-size:18px">फ़ाइल यहाँ ड्राप करें या क्लिक करके अपलोड करें</div>
-    <div class="file-help">फ़ाइल अपलोड करने के लिए: कृपया अपनी CSV फ़ाइल <strong>cDCMS</strong> से डाउनलोड करें। <br> <strong>रास्ता</strong> - <strong>cDCMS</strong> - ConsumerManagement/ConsumerDetails/SearchConsumer -<strong>Search</strong> पर क्लिक करें फिर <strong>Export to Excel</strong> पर क्लिक करें।</div>
-    <div style="margin-top:15px; font-size:12px; color:var(--muted);">
-      अगर डैशबोर्ड सही से नहीं दिख रहा? <a href="javascript:void(0)" onclick="event.stopPropagation(); reUpload();" style="color:var(--primary); text-decoration:underline;">यहाँ क्लिक करके डेटा साफ़ करें</a>
-    </div>
+
   </div>
 </div>
 
@@ -963,8 +960,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 
 <div id="uploadMsg" class="flash-msg">फाइल सफलतापूर्वक अपलोड की गई।</div>
 
-<div id="flashEKYC" class="alert-msg">सभी सक्रिय एलपीजी उपभोक्ताओं के लिए ई-केवाईसी प्रमाणीकरण अनिवार्य है।</div>
-<div id="flashMobile" class="alert-msg">बुकिंग, DAC, सब्सिडी से संबंधित सेवाओं के लिए मोबाइल नंबर रजिस्टर करना ज़रूरी है।</div>
 
 <div id="bookView"></div>
 
@@ -1106,6 +1101,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
  <select id="consumerStatusFilter"><option value="">All Consumer Status</option></select>
  <select id="connectionTypeFilter"><option value="">All Connection Type</option></select>
  <select id="pfmsFilter"><option value="">All Beneficiary Type</option></select>
+ <select id="bookingSourceFilter"><option value="">All Booking Source</option></select>
  <div class="filter-group">
   <span class="filter-group-title">रिफिल तारीख</span>
   <input type="date" id="refillFrom" placeholder="From" aria-label="Refill From">
@@ -1390,6 +1386,7 @@ const dropZoneTemplate = dropZoneEl ? dropZoneEl.innerHTML : '';
 const flashEKYC=el('flashEKYC'),flashMobile=el('flashMobile');
 const ekycFilter=el('ekycFilter'),areaFilter=el('areaFilter'),natureFilter=el('natureFilter'),mobileStatusFilter=el('mobileStatusFilter');
 const consumerStatusFilter=el('consumerStatusFilter'),connectionTypeFilter=el('connectionTypeFilter'),pfmsFilter=el('pfmsFilter');
+const bookingSourceFilter=el('bookingSourceFilter');
 const refillFrom=el('refillFrom'),refillTo=el('refillTo'),ekycFrom=el('ekycFrom'),ekycTo=el('ekycTo');
 const sortBy=el('sortBy'),sortOrder=el('sortOrder');
 const consumerSearch=el('consumerSearch'),viewBtn=el('viewBtn'),resetBtn=el('resetBtn');
@@ -1522,6 +1519,8 @@ function handleFile(f){
 
    }
    const ru=el('reUploadBtn'); if(ru)ru.style.display='block';
+   // Hide Upload File button after file upload
+   const uploadBtn = el('uploadFileBtn'); if(uploadBtn) uploadBtn.style.display = 'none';
    // Auto-hide cards after upload; show only on user click
    const sc = el('summaryCards'); if(sc) sc.style.display = 'none';
    const tbtn = el('toggleCardsBtn'); if(tbtn) tbtn.innerHTML = '📊 कार्ड दिखाएं';
@@ -1773,9 +1772,9 @@ function copyToClipboard(text,btn){
 function initDynamic(){allColumns=Object.keys(data[0]||{});addColumn.innerHTML='<option value="">Add column</option>'+allColumns.sort().map(c=>`<option>${c}</option>`).join('');removeColumn.innerHTML='<option value="">Remove column</option>'+visibleCols.map(c=>`<option>${c}</option>`).join('');sortBy.innerHTML='<option value="">Sort By</option>'+allColumns.sort().map(c=>`<option>${c}</option>`).join('');}
 
 function updateFilterOptions(d){
- const currE=ekycFilter.value,currA=areaFilter.value,currN=natureFilter.value,currM=mobileStatusFilter.value,currCS=consumerStatusFilter.value,currCT=connectionTypeFilter.value,currPF=pfmsFilter.value;
- const e=new Set(),a=new Set(),n=new Set(),cs=new Set(),ct=new Set(),pf=new Set();let hR=false,hU=false;
- d.forEach(x=>{if(x['EKYC Status'])e.add(x['EKYC Status']);if(x['Delivery Area'])a.add(x['Delivery Area']);if(x['Consumer Nature'])n.add(x['Consumer Nature']);if(x['Consumer Status'])cs.add(x['Consumer Status']);if(x['Connection Type'])ct.add(x['Connection Type']);if(x['PFMSBeneficiaryType'])pf.add(x['PFMSBeneficiaryType']);if(x['Mobile No'])hR=true;else hU=true;});
+ const currE=ekycFilter.value,currA=areaFilter.value,currN=natureFilter.value,currM=mobileStatusFilter.value,currCS=consumerStatusFilter.value,currCT=connectionTypeFilter.value,currPF=pfmsFilter.value,currBS=bookingSourceFilter.value;
+ const e=new Set(),a=new Set(),n=new Set(),cs=new Set(),ct=new Set(),pf=new Set(),bs=new Set();let hR=false,hU=false;
+ d.forEach(x=>{if(x['EKYC Status'])e.add(x['EKYC Status']);if(x['Delivery Area'])a.add(x['Delivery Area']);if(x['Consumer Nature'])n.add(x['Consumer Nature']);if(x['Consumer Status'])cs.add(x['Consumer Status']);if(x['Connection Type'])ct.add(x['Connection Type']);if(x['PFMSBeneficiaryType'])pf.add(x['PFMSBeneficiaryType']);if(x['Last Refill BookingSource'])bs.add(x['Last Refill BookingSource']);if(x['Mobile No'])hR=true;else hU=true;});
  
  const b=(el,s,c,l)=>{
   el.innerHTML=`<option value="">${l}</option>`+[...s].sort().map(x=>`<option>${x}</option>`).join('');
@@ -1788,6 +1787,7 @@ function updateFilterOptions(d){
  b(consumerStatusFilter,cs,currCS,'All Consumer Status');
  b(connectionTypeFilter,ct,currCT,'All Connection Type');
  b(pfmsFilter,pf,currPF,'All Beneficiary Type');
+ b(bookingSourceFilter,bs,currBS,'All Booking Source');
  
  mobileStatusFilter.innerHTML='<option value="">All Mobile Status</option>'+(hR?'<option>Registered</option>':'')+(hU?'<option>Unregistered</option>':'');
  mobileStatusFilter.value=(currM==='Registered'&&hR)||(currM==='Unregistered'&&hU)?currM:'';
@@ -1800,12 +1800,12 @@ function applyAll(custom){
   const ac=document.getElementById('aboutContainer'); if(ac) ac.style.display='none';
   el('consumerDataContainer').style.display='block';
  }
- if(ekycFilter.value)f=f.filter(d=>d['EKYC Status']===ekycFilter.value);if(areaFilter.value)f=f.filter(d=>d['Delivery Area']===areaFilter.value);if(natureFilter.value)f=f.filter(d=>d['Consumer Nature']===natureFilter.value);if(consumerStatusFilter.value)f=f.filter(d=>(d['Consumer Status']||'')===consumerStatusFilter.value);if(connectionTypeFilter.value)f=f.filter(d=>(d['Connection Type']||'')===connectionTypeFilter.value);if(pfmsFilter.value)f=f.filter(d=>(d['PFMSBeneficiaryType']||'')===pfmsFilter.value);if(mobileStatusFilter.value==='Registered')f=f.filter(d=>d['Mobile No']);if(mobileStatusFilter.value==='Unregistered')f=f.filter(d=>!d['Mobile No']);const rf=parseInputDate(refillFrom.value),rt=parseInputDate(refillTo.value);if(rf||rt){f=f.filter(d=>{const ld=parseDate(d['LastRefillDate']);if(!ld)return false;return (!rf||ld>=rf)&&(!rt||ld<=rt)})}const ef=parseInputDate(ekycFrom.value),et=parseInputDate(ekycTo.value);if(ef||et){f=f.filter(d=>{const ed=parseDate(d['EKYC Date']);if(!ed)return false;return (!ef||ed>=ef)&&(!et||ed<=et)})}if(customFilter)f=f.filter(customFilter);if(tableSearch.value){const q=tableSearch.value.toLowerCase();f=f.filter(o=>Object.values(o).some(v=>String(v).toLowerCase().includes(q)))}if(sortBy.value){f.sort((a,b)=>{const A=(a[sortBy.value]||'').toString();const B=(b[sortBy.value]||'').toString();return sortOrder.value==='asc'?A.localeCompare(B,undefined,{numeric:true}):B.localeCompare(A,undefined,{numeric:true})})}filteredData=f;updateFilterOptions(filteredData);updateSummaryCards();currentPage=1;renderPage();renderReports();}
+ if(ekycFilter.value)f=f.filter(d=>d['EKYC Status']===ekycFilter.value);if(areaFilter.value)f=f.filter(d=>d['Delivery Area']===areaFilter.value);if(natureFilter.value)f=f.filter(d=>d['Consumer Nature']===natureFilter.value);if(consumerStatusFilter.value)f=f.filter(d=>(d['Consumer Status']||'')===consumerStatusFilter.value);if(connectionTypeFilter.value)f=f.filter(d=>(d['Connection Type']||'')===connectionTypeFilter.value);if(pfmsFilter.value)f=f.filter(d=>(d['PFMSBeneficiaryType']||'')===pfmsFilter.value);if(bookingSourceFilter.value)f=f.filter(d=>(d['Last Refill BookingSource']||'')===bookingSourceFilter.value);if(mobileStatusFilter.value==='Registered')f=f.filter(d=>d['Mobile No']);if(mobileStatusFilter.value==='Unregistered')f=f.filter(d=>!d['Mobile No']);const rf=parseInputDate(refillFrom.value),rt=parseInputDate(refillTo.value);if(rf||rt){f=f.filter(d=>{const ld=parseDate(d['LastRefillDate']);if(!ld)return false;return (!rf||ld>=rf)&&(!rt||ld<=rt)})}const ef=parseInputDate(ekycFrom.value),et=parseInputDate(ekycTo.value);if(ef||et){f=f.filter(d=>{const ed=parseDate(d['EKYC Date']);if(!ed)return false;return (!ef||ed>=ef)&&(!et||ed<=et)})}if(customFilter)f=f.filter(customFilter);if(tableSearch.value){const q=tableSearch.value.toLowerCase();f=f.filter(o=>Object.values(o).some(v=>String(v).toLowerCase().includes(q)))}if(sortBy.value){f.sort((a,b)=>{const A=(a[sortBy.value]||'').toString();const B=(b[sortBy.value]||'').toString();return sortOrder.value==='asc'?A.localeCompare(B,undefined,{numeric:true}):B.localeCompare(A,undefined,{numeric:true})})}filteredData=f;updateFilterOptions(data);updateSummaryCards();currentPage=1;renderPage();renderReports();}
 
-[ekycFilter,areaFilter,natureFilter,consumerStatusFilter,connectionTypeFilter,pfmsFilter,mobileStatusFilter,sortBy,sortOrder,refillFrom,refillTo,ekycFrom,ekycTo].forEach(x=>x.onchange=()=>applyAll());tableSearch.oninput=()=>applyAll();
+[ekycFilter,areaFilter,natureFilter,consumerStatusFilter,connectionTypeFilter,pfmsFilter,bookingSourceFilter,mobileStatusFilter,sortBy,sortOrder,refillFrom,refillTo,ekycFrom,ekycTo].forEach(x=>x.onchange=()=>applyAll());tableSearch.oninput=()=>applyAll();
 viewBtn.onclick=()=>{const no=consumerSearch.value.trim();if(!no)return alert('Enter Consumer No');openBook(no)};
 resetBtn.onclick=()=>{
- ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';mobileStatusFilter.value='';sortBy.value='';sortOrder.value='asc';consumerSearch.value='';tableSearch.value='';
+ ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';bookingSourceFilter.value='';mobileStatusFilter.value='';sortBy.value='';sortOrder.value='asc';consumerSearch.value='';tableSearch.value='';
  refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
  el('reportContainer').style.display='none';
  el('consumerDataContainer').style.display='none';
@@ -1813,8 +1813,8 @@ resetBtn.onclick=()=>{
  const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='block';
   el('bookView').innerHTML='';
   uploadMsg.style.display='none';
-  flashEKYC.style.display='none';
-  flashMobile.style.display='none';
+  if(flashEKYC) flashEKYC.style.display='none';
+  if(flashMobile) flashMobile.style.display='none';
   document.querySelectorAll('.nav-item').forEach(b=>{
     b.classList.remove('active');
     if(b.textContent==='About') b.classList.add('active');
@@ -2018,9 +2018,21 @@ function toggleLock(isLocked) {
   isDashboardLocked = isLocked;
   if (!isLocked) lastActivityTime = Date.now(); // Reset timer on unlock
   try {
-    const ids = ['fileInput','consumerSearch','viewBtn','resetBtn','toggleCardsBtn','tableSearch','ekycFilter','areaFilter','natureFilter','mobileStatusFilter','consumerStatusFilter','connectionTypeFilter','pfmsFilter','refillFrom','refillTo','ekycFrom','ekycTo','sortBy','sortOrder','addColumn','removeColumn','requestMobile','requestType','requestSend'];
+    const ids = ['fileInput','consumerSearch','viewBtn','resetBtn','toggleCardsBtn','tableSearch','ekycFilter','areaFilter','natureFilter','mobileStatusFilter','consumerStatusFilter','connectionTypeFilter','pfmsFilter','bookingSourceFilter','refillFrom','refillTo','ekycFrom','ekycTo','sortBy','sortOrder','addColumn','removeColumn','requestMobile','requestType','requestSend'];
     const inputs = ids.map(id => el(id)).filter(Boolean);
     inputs.forEach(i => { if(i) i.disabled = isLocked; });
+    
+    // Show/hide upload button based on lock status
+    const uploadBtn = el('uploadFileBtn');
+    if (uploadBtn) {
+      uploadBtn.style.display = isLocked ? 'none' : 'block';
+    }
+    
+    // Hide the original upload area
+    const uploadArea = document.querySelector('.upload-area');
+    if (uploadArea) {
+      uploadArea.style.display = 'none';
+    }
   } catch (err) {
     console.warn('toggleLock input toggle error', err);
   }
@@ -2049,7 +2061,7 @@ function toggleLock(isLocked) {
 }
 
 function resetFilters(){
- ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';mobileStatusFilter.value='';
+ ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';bookingSourceFilter.value='';mobileStatusFilter.value='';
  refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
  sortBy.value='';sortOrder.value='asc';
  tableSearch.value='';
@@ -2649,8 +2661,8 @@ function openBook(no){
   const c=data.find(d=>String(d['Consumer No']).trim()===String(no).trim());
   if(!c) return alert('Consumer not found');
   
-  if(c['EKYC Status']!=='Completed') flashEKYC.style.display='block';
-  if(!c['Mobile No']) flashMobile.style.display='block';
+  if(flashEKYC && c['EKYC Status']!=='Completed') flashEKYC.style.display='block';
+  if(flashMobile && !c['Mobile No']) flashMobile.style.display='block';
 
   const isPending = c['EKYC Status'] !== 'Completed';
   
@@ -2688,9 +2700,9 @@ function openBook(no){
   const actionBar = actionButtons.length ? `<div class="book-action-bar">${actionButtons.join('<div style="width:1px;height:20px;background:var(--border);margin:0 10px;"></div>')}</div>` : '';
 
   let html = `
-    <div class="book-wrap" onclick="if(event.target===this){this.remove();flashEKYC.style.display='none';flashMobile.style.display='none';}">
+    <div class="book-wrap" onclick="if(event.target===this){this.remove();if(window.flashEKYC) flashEKYC.style.display='none';if(window.flashMobile) flashMobile.style.display='none';}">
        <div class="book ${isPending ? 'pending' : ''}">
-         <span class="book-close" onclick="this.closest('.book-wrap').remove();flashEKYC.style.display='none';flashMobile.style.display='none'">✖</span>
+         <span class="book-close" onclick="this.closest('.book-wrap').remove();if(window.flashEKYC) flashEKYC.style.display='none';if(window.flashMobile) flashMobile.style.display='none'">✖</span>
          <h3 style="${isPending ? 'color: var(--danger);' : ''}"><span>👤</span> उपभोक्ता विवरण - ${no} - ${c['Consumer Name'] || ''}</h3>
          ${actionBar}
         <div class="book-content">
