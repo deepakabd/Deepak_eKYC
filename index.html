@@ -2656,8 +2656,8 @@ el('bookingSourceCompletion').innerHTML='<div class="report-line header"><div>Bo
 }
 
 function openBook(no){
-  flashEKYC.style.display='none';
-  flashMobile.style.display='none';
+  if(flashEKYC) flashEKYC.style.display='none';
+  if(flashMobile) flashMobile.style.display='none';
   const c=data.find(d=>String(d['Consumer No']).trim()===String(no).trim());
   if(!c) return alert('Consumer not found');
   
