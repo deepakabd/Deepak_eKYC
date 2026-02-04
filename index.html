@@ -1,9 +1,89 @@
-﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Firebase SDK - Loaded with error handling -->
+<script>
+    // Load Firebase SDK asynchronously with error handling
+    function loadFirebaseSDK() {
+        const script = document.createElement('script');
+        script.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
+
+        script.crossOrigin = 'anonymous';
+        
+        script.onload = function() {
+            console.log('Firebase App SDK loaded');
+            
+            // Load Auth SDK
+            const authScript = document.createElement('script');
+            authScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js';
+
+            authScript.crossOrigin = 'anonymous';
+            authScript.onload = function() {
+                console.log('Firebase Auth SDK loaded');
+                
+                // Load Firestore SDK
+                const firestoreScript = document.createElement('script');
+                firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+
+                firestoreScript.crossOrigin = 'anonymous';
+                firestoreScript.onload = function() {
+                    console.log('Firebase Firestore SDK loaded');
+                    // Initialize Firebase once all SDKs are loaded
+                    initFirebase();
+                };
+                firestoreScript.onerror = function() {
+                    console.error('Failed to load Firebase Firestore SDK');
+                    initFirebase(); // Try to initialize anyway with what we have
+                };
+                document.head.appendChild(firestoreScript);
+            };
+            authScript.onerror = function() {
+                console.error('Failed to load Firebase Auth SDK');
+                initFirebase(); // Try to initialize anyway with what we have
+            };
+            document.head.appendChild(authScript);
+        };
+        
+        script.onerror = function() {
+            console.error('Failed to load Firebase App SDK');
+            // Firebase won't work, but we'll continue with localStorage fallback
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    // Initialize Firebase after SDKs are loaded
+    function initFirebase() {
+        try {
+            // Check if Firebase SDK is loaded
+            if (typeof firebase === 'undefined') {
+                console.error("Firebase SDK not loaded! Using localStorage fallback.");
+            } else {
+                // Initialize Firebase
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                // Initialize Firestore with settings to avoid Listen/channel errors
+                db = firebase.firestore();
+                // Disable persistence if causing issues
+                db.settings({
+                    persistence: false,
+                    experimentalForceLongPolling: true, // Use long polling instead of WebSockets
+                    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+                });
+                console.log("Firebase initialized successfully!");
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            // Don't show alert on every page load, just log it
+        }
+    }
+    
+    // Start loading Firebase SDK when DOM is ready
+    document.addEventListener('DOMContentLoaded', loadFirebaseSDK);
+</script>
 <style>
 :root {
   --bg: #f5f7fb;
@@ -433,6 +513,9 @@ button:hover { background: var(--primaryHover); }
   padding: 10px;
   z-index: 1000;
   min-width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .nav-submenu .nav-item { width: 100%; border-radius: 8px; margin-bottom: 5px; font-size: 13px; text-align: left; }
 
@@ -706,7 +789,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   
   .navbar { flex-direction: column; padding: 10px; gap: 5px; }
   .nav-item { width: 100%; padding: 12px; text-align: center; }
-  .nav-submenu { position: static; transform: none; box-shadow: none; border: none; padding: 0 0 0 15px; width: 100%; display: none; }
+  .nav-submenu { position: static; transform: none; box-shadow: none; border: none; padding: 0 0 0 15px; width: 100%; display: none; max-height: 250px; overflow-y: auto; overflow-x: hidden; }
   .nav-item:hover .nav-submenu { display: block; }
 
   .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -870,6 +953,43 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
 </style>
 </head>
 <body>
+<script>
+// Define el() function early to avoid ReferenceError
+const el=id=>document.getElementById(id);
+
+// Firebase configuration (Real values from Firebase Console)
+const firebaseConfig = {
+    apiKey: "AIzaSyCw9O6XGJ0EL4unyr4akbUJBkzE3enUUfU",
+    authDomain: "deepak-ekyc.firebaseapp.com",
+    projectId: "deepak-ekyc",
+    storageBucket: "deepak-ekyc.firebasestorage.app",
+    messagingSenderId: "837268787758",
+    appId: "1:837268787758:web:4f9af5a690c37fbd3685bf",
+    measurementId: "G-ZZNQS01BFG"
+};
+
+// Initialize Firebase with error handling
+let app, auth, db;
+
+// Firebase error handling helper
+function handleFirebaseError(error) {
+    let errorMessage = "An error occurred. Please try again.";
+    switch (error.code) {
+        case 'auth/user-not-found':
+            errorMessage = "User not found.";
+            break;
+        case 'auth/wrong-password':
+            errorMessage = "Incorrect password.";
+            break;
+        default:
+            errorMessage = error.message;
+            break;
+    }
+    alert(errorMessage);
+    console.error("Firebase Error:", error.code, error.message);
+    return errorMessage;
+}
+</script>
 <div id="loadingOverlay">
   <div class="loader"></div>
   <div id="loadingText">प्रसंस्करण हो रहा है, कृपया प्रतीक्षा करें...</div>
@@ -890,8 +1010,6 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
    <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे और View Info पर क्लिक करें।">
    <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
    <button id="resetBtn">रीसेट करें</button>
-   <button id="lockBtn">लॉक करें</button>
-   <button id="unlockBtn">अनलॉक करें</button>
   </div>
 
   <div class="navbar" style="margin:12px 0 12px 0;">
@@ -924,6 +1042,8 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
     डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
    </div>
    <div class="nav-item" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">Upload File</div>
+   <div class="nav-item" id="loginBtn" onclick="document.getElementById('loginModal').style.display = 'flex'">लॉगिन</div>
+   <div class="nav-item" id="logoutBtn" onclick="logout()">लॉगआउट</div>
    <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
   </div>
 </div>
@@ -947,7 +1067,7 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
   </div>
 </div>
 
-<div class="upload-area">
+<div class="upload-area" style="display: none;">
   <div class="file-upload drop-zone" id="dropZone">
     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
 
@@ -997,6 +1117,20 @@ tr.highlight { background-color: rgba(37, 99, 235, .05) !important; }
       <button id="verifyRecovery" style="width:100%; padding:12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer; font-weight:bold;">PIN रीसेट करें</button>
     </div>
     <button id="closeRecovery" style="margin-top:15px; background:none; border:none; color:#666; cursor:pointer; font-size:13px;">बंद करें</button>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:white; padding:25px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.2); width:320px; text-align:center;">
+    <h3 style="margin-top:0; color:#333;">Login</h3>
+    <p style="font-size:14px; color:#666; margin-bottom:20px;">कृपया डीलर कोड और PIN दर्ज करें</p>
+    <input type="text" id="loginDealerCode" placeholder="8-अंकों का डीलर कोड" style="width:100%; padding:12px; margin-bottom:15px; border:2px solid #ddd; border-radius:8px; font-size:16px; text-align:center; outline:none; transition:border-color 0.3s;">
+    <input type="password" id="loginPin" placeholder="PIN दर्ज करें" style="width:100%; padding:12px; margin-bottom:20px; border:2px solid #ddd; border-radius:8px; font-size:18px; text-align:center; outline:none; transition:border-color 0.3s;">
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+      <button id="cancelLogin" style="flex:1; padding:12px; border:none; border-radius:8px; background:#f1f5f9; color:#475569; cursor:pointer; font-weight:bold;">रद्द करें</button>
+      <button id="submitLogin" style="flex:1; padding:12px; border:none; border-radius:8px; background:#27ae60; color:white; cursor:pointer; font-weight:bold;">लॉगिन</button>
+    </div>
   </div>
 </div>
 
@@ -1162,7 +1296,6 @@ function showAbout(btn){
   if(ac)ac.style.display='block';
 }
 document.addEventListener('click',function(e){const nd=document.querySelector('.nav-dropdown');const sm=el('reportsSubmenu');if(!nd||!sm)return;const inside=nd.contains(e.target);if(sm.style.display==='block'&&!inside){sm.style.display='none'}})
-const el=id=>document.getElementById(id);
 
   function reUpload(){
     if(!confirm('क्या आप दूसरी फ़ाइल अपलोड करना चाहते हैं? वर्तमान डेटा हट जाएगा।')) return;
@@ -1894,16 +2027,43 @@ el('cancelPin').onclick=()=>{
   el('pinModal').style.display = 'none';
 };
 
-el('submitPin').onclick=()=>{
+el('submitPin').onclick=async()=>{
   const pin = el('pinInput').value;
-  const savedPin = localStorage.getItem('dashboard-pin') || '1234';
-  if(pin === savedPin) {
+  const currentDealer = localStorage.getItem('current-dealer');
+  
+  if (!currentDealer) {
+    alert('कृपया पहले लॉगिन करें!');
     el('pinModal').style.display = 'none';
-    toggleLock(false);
-  } else {
-    alert('गलत PIN!');
-    el('pinInput').value = '';
-    el('pinInput').focus();
+    el('loginModal').style.display = 'flex';
+    return;
+  }
+  
+  try {
+    // Show loading state
+    const submitBtn = el('submitPin');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'पुनः अनलॉक हो रहा है...';
+    
+    const credentials = await getDealerCredentials();
+    
+    // Check if current dealer exists and PIN matches
+    if (credentials[currentDealer] === pin) {
+      el('pinModal').style.display = 'none';
+      toggleLock(false);
+    } else {
+      alert('गलत PIN!');
+      el('pinInput').value = '';
+      el('pinInput').focus();
+    }
+  } catch (error) {
+    console.error('Error during pin unlock:', error);
+    alert('पुनः अनलॉक में समस्या हुई! कृपया बाद में पुनः प्रयास करें।');
+  } finally {
+    // Reset button state
+    const submitBtn = el('submitPin');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'अनलॉक';
   }
 };
 
@@ -2004,8 +2164,266 @@ setInterval(() => {
   }
 }, 1000);
 
+// Get dealer credentials from Firebase
+async function getDealerCredentials() {
+  try {
+    let credentials = {};
+    
+    if (db) {
+      // Try Firebase first if available
+      const snapshot = await db.collection('dashboard-credentials').get();
+      
+      // Convert Firestore snapshot to credentials object
+      snapshot.forEach(doc => {
+        credentials[doc.id] = doc.data().pin;
+      });
+      
+      console.log('Credentials loaded from Firebase');
+    } else {
+      // Fallback to localStorage if Firebase is not available
+      credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      console.log('Credentials loaded from localStorage (Firebase not available)');
+    }
+    
+    // If no credentials found, return default
+    if (Object.keys(credentials).length === 0) {
+      return {
+        '12345678': '1234'
+      };
+    }
+    
+    return credentials;
+  } catch (error) {
+    console.error('Error getting credentials:', error);
+    // Fallback to default credentials on error
+    return {
+      '12345678': '1234'
+    };
+  }
+}
+
+// Add a new dealer credential to Firebase
+async function addDealerCredential(dealerCode, pin) {
+  try {
+    if (db) {
+      // Save to Firestore if Firebase is available
+      await db.collection('dashboard-credentials').doc(dealerCode).set({
+        pin: pin,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('Credential added to Firebase');
+    } else {
+      // Fallback to localStorage if Firebase is not available
+      let credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      credentials[dealerCode] = pin;
+      localStorage.setItem('dashboard-credentials', JSON.stringify(credentials));
+      console.log('Credential added to localStorage (Firebase not available)');
+    }
+  } catch (error) {
+    console.error('Error adding dealer credential:', error);
+    handleFirebaseError(error);
+  }
+}
+
+// Check if credentials are valid in Firebase
+async function isValidCredentials(dealerCode, pin) {
+  try {
+    if (db) {
+      // Check Firebase if available
+      const docRef = db.collection('dashboard-credentials').doc(dealerCode);
+      const doc = await docRef.get();
+      
+      if (doc.exists) {
+        return doc.data().pin === pin;
+      }
+    } else {
+      // Check localStorage if Firebase is not available
+      const credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      if (dealerCode in credentials) {
+        return credentials[dealerCode] === pin;
+      }
+    }
+    
+    // Fallback to default credentials if dealer code not found in either Firebase or localStorage
+    return dealerCode === '12345678' && pin === '1234';
+  } catch (error) {
+    console.error('Error checking credentials:', error);
+    
+    // Try localStorage as last resort
+    try {
+      const credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      if (dealerCode in credentials) {
+        return credentials[dealerCode] === pin;
+      }
+    } catch (localStorageError) {
+      console.error('Error checking credentials in localStorage:', localStorageError);
+    }
+    
+    // Fallback to default credentials on error
+    return dealerCode === '12345678' && pin === '1234';
+  }
+}
+
+// Show flash message function
+function showFlashMessage(message, type = 'info') {
+  // Create flash message element if it doesn't exist
+  let flashMsg = document.querySelector('.info-flash-msg');
+  if (!flashMsg) {
+    flashMsg = document.createElement('div');
+    flashMsg.className = 'info-flash-msg flash-msg';
+    flashMsg.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10001;
+      font-weight: bold;
+      animation: fadeInOut 3s ease-in-out;
+    `;
+    document.body.appendChild(flashMsg);
+  }
+  
+  flashMsg.textContent = message;
+  flashMsg.style.display = 'block';
+  
+  // Hide after 3 seconds
+  setTimeout(() => {
+    flashMsg.style.display = 'none';
+  }, 3000);
+}
+
+// Add CSS animation for flash message and styling for login button
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-20px); }
+  }
+  
+  #loginBtn {
+    color: #000000;
+    font-weight: bold;
+    cursor: pointer;
+  }
+`;
+document.head.appendChild(style);
+
+// Login functionality
+function initLogin() {
+  // Check if user is already logged in
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  if (isLoggedIn) {
+    toggleLock(false);
+  } else {
+    toggleLock(true);
+    // Show flash message instead of login modal
+    showFlashMessage('To access this page, kindly login', 'info');
+  }
+}
+
+// Auto logout on page reload
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('isLoggedIn');
+});
+
+// Login event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const submitLoginBtn = el('submitLogin');
+  const cancelLoginBtn = el('cancelLogin');
+  const loginModal = el('loginModal');
+  const loginDealerCode = el('loginDealerCode');
+  const loginPin = el('loginPin');
+  
+  if (submitLoginBtn) {
+    submitLoginBtn.onclick = async () => {
+      const dealerCode = loginDealerCode.value.trim();
+      const pin = loginPin.value.trim();
+      
+      // Guard clause: prevent empty credentials submission
+      if (!dealerCode || !pin) {
+        alert('कृपया डीलर कोड और PIN दर्ज करें!');
+        return;
+      }
+      
+      try {
+        // Show loading state
+        submitLoginBtn.disabled = true;
+        submitLoginBtn.textContent = 'लॉगिन हो रहा है...';
+        
+        if (await isValidCredentials(dealerCode, pin)) {
+          // Login successful
+          localStorage.setItem('isLoggedIn', 'true');
+          // Store the current dealer code for auto-lock
+          localStorage.setItem('current-dealer', dealerCode);
+          loginModal.style.display = 'none';
+          toggleLock(false);
+          alert('लॉगिन सफल!');
+        } else {
+          alert('गलत डीलर कोड या PIN!');
+          loginPin.value = '';
+          loginPin.focus();
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('लॉगिन में समस्या हुई! कृपया बाद में पुनः प्रयास करें।');
+      } finally {
+        // Reset button state
+        submitLoginBtn.disabled = false;
+        submitLoginBtn.textContent = 'लॉगिन करें';
+      }
+    };
+  }
+  
+  if (cancelLoginBtn) {
+    cancelLoginBtn.onclick = () => {
+      loginModal.style.display = 'none';
+    };
+  }
+  
+  // Login button click handler
+  const loginBtn = el('loginBtn');
+  if (loginBtn) {
+    loginBtn.onclick = () => {
+      loginModal.style.display = 'flex';
+    };
+  }
+  
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && loginModal.style.display === 'flex') {
+      loginModal.style.display = 'none';
+    }
+  });
+  
+  // Initialize login system
+  initLogin();
+});
+
+// Logout function
+function logout() {
+  if (confirm('क्या आप लॉगआउट करना चाहते हैं?')) {
+    localStorage.removeItem('isLoggedIn');
+    toggleLock(true);
+    // Show login modal after logout
+    setTimeout(() => {
+      const loginModal = el('loginModal');
+      if (loginModal) {
+        loginModal.style.display = 'flex';
+      }
+    }, 100);
+    alert('लॉगआउट सफल!');
+  }
+}
+
 function autoLockDashboard() {
   toggleLock(true);
+  // Show PIN modal for re-authentication after auto-lock
   const modal = el('pinModal');
   const input = el('pinInput');
   input.value = '';
@@ -2028,7 +2446,7 @@ function toggleLock(isLocked) {
       uploadBtn.style.display = isLocked ? 'none' : 'block';
     }
     
-    // Hide the original upload area
+    // Always hide upload area as requested
     const uploadArea = document.querySelector('.upload-area');
     if (uploadArea) {
       uploadArea.style.display = 'none';
@@ -2037,11 +2455,32 @@ function toggleLock(isLocked) {
     console.warn('toggleLock input toggle error', err);
   }
 
+  // Show/hide login/logout buttons based on lock status
+  const loginBtn = el('loginBtn');
+  const logoutBtn = el('logoutBtn');
+  if (loginBtn) loginBtn.style.display = isLocked ? 'inline-block' : 'none';
+  if (logoutBtn) logoutBtn.style.display = isLocked ? 'none' : 'inline-block';
+  
   const navbar = document.querySelector('.navbar');
-  if(navbar) navbar.style.pointerEvents = isLocked ? 'none' : 'auto';
   if(navbar) navbar.style.opacity = isLocked ? '0.6' : '1';
-  if(lockBtn) lockBtn.style.display = isLocked ? 'none' : 'inline-block';
-  if(unlockBtn) unlockBtn.style.display = isLocked ? 'inline-block' : 'none';
+  
+  // Don't disable pointer events for the entire navbar, just disable interactive elements except login button
+  const navbarItems = navbar.querySelectorAll('.nav-item:not(#loginBtn)');
+  navbarItems.forEach(item => {
+    if(isLocked) {
+      item.style.pointerEvents = 'none';
+      item.style.opacity = '0.5';
+    } else {
+      item.style.pointerEvents = 'auto';
+      item.style.opacity = '1';
+    }
+  });
+  
+  // Ensure login button is always clickable when visible
+  if(loginBtn) {
+    loginBtn.style.pointerEvents = 'auto';
+    loginBtn.style.opacity = '1';
+  }
 
   // Add/remove a body-level class so CSS can forcibly hide upload UI in locked state
   try{ if (isLocked) document.body.classList.add('locked'); else document.body.classList.remove('locked'); } catch(e){console.warn('body lock class error', e); }
