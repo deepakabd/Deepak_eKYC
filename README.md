@@ -8,7 +8,7 @@ This project is an HTML-based eKYC & MIS Dashboard.
 - Lightweight HTML design
 
 ## Live Demo
-https://deepakabd.github.io/Deepak_eKYC/Dashboard.html
+https://deepakabd.github.io/Deepak_eKYC/index.html
 
 ## Tech Stack
 - HTML
