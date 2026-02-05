@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1007,7 +1007,7 @@ function handleFirebaseError(error) {
   </div>
 
   <div class="filters" id="topFilters" style="margin-top:12px; justify-content:center;">
-   <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे और View Info पर क्लिक करें।">
+   <input type="text" id="consumerSearch" placeholder="यहां उपभोक्ता संख्या दर्ज करे">
    <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
    <button id="resetBtn">रीसेट करें</button>
   </div>
@@ -1158,60 +1158,103 @@ function handleFirebaseError(error) {
 <div class="active-report-container" id="aboutContainer" style="display:none">
  <div class="report-header">डैशबोर्ड के बारे में (System Summary)</div>
  <div class="about-content">
-  <p class="about-p">यह एक <strong>"Privacy-First"</strong> और <strong>"Action-Oriented"</strong> MIS डैशबोर्ड है, जिसे विशेष रूप से HPCL LPG वितरकों के लिए e-KYC की निगरानी और परिचालन दक्षता (Operational Efficiency) बढ़ाने के लिए डिज़ाइन किया गया है। यह cDCMS के रॉ डेटा को विज़ुअल इंटेलिजेंस में बदलकर वितरकों को त्वरित निर्णय लेने में मदद करता है।</p>
-  
+
+  <p class="about-p">
+    यह वेबसाइट <strong>HPCL LPG वितरकों</strong> के लिए विकसित किया गया एक 
+    <strong>Secure, Privacy-First और Action-Oriented e-KYC & MIS Dashboard</strong> है। 
+    इसका मुख्य उद्देश्य LPG उपभोक्ताओं के रॉ ऑपरेशनल डेटा को 
+    <strong>Insight-Driven Intelligence</strong> में बदलकर 
+    वितरकों को तेज़, सटीक और प्रभावी निर्णय लेने में सहायता करना है।
+  </p>
+
   <div class="about-grid">
-   <div class="about-card">
-    <div class="about-card-title">🔒 डेटा सुरक्षा और गोपनीयता</div>
-    <ul>
-     <li><strong>100% क्लाइंट-साइड:</strong> आपका डेटा कभी भी आपके ब्राउज़र से बाहर नहीं जाता। कोई सर्वर नहीं, कोई डेटा चोरी का डर नहीं।</li>
-     <li><strong>सुरक्षित एक्सेस:</strong> PIN-आधारित लॉक सिस्टम यह सुनिश्चित करता है कि केवल अधिकृत व्यक्ति ही डेटा देख सके।</li>
-    </ul>
-   </div>
 
-   <div class="about-card">
-    <div class="about-card-title">📊 एडवांस्ड विज़ुअलाइज़ेशन</div>
-    <ul>
-     <li><strong>इंटरेक्टिव चार्ट्स:</strong> रिफिल ट्रेंड्स, e-KYC प्रोग्रेस और एरिया-वाइज हीटमैप्स के जरिए डेटा का आसान विश्लेषण।</li>
-     <li><strong>स्मार्ट समरी:</strong> एक नज़र में कुल उपभोक्ता, उज्ज्वला, और पेंडिंग e-KYC की रियल-टाइम स्थिति।</li>
-    </ul>
-   </div>
+    <div class="about-card">
+      <div class="about-card-title">🧩 Core Purpose</div>
+      <ul>
+        <li>LPG उपभोक्ताओं की <strong>e-KYC स्थिति</strong>, रिफिल पैटर्न, मोबाइल रजिस्ट्रेशन, DBC/SBC, SV Generation और बुकिंग सोर्स को एक ही प्लेटफ़ॉर्म पर देखना।</li>
+        <li>यह पहचान करना कि <strong>कहाँ e-KYC pending है</strong> और किस उपभोक्ता / क्षेत्र पर तुरंत action आवश्यक है।</li>
+        <li>डेटा के आधार पर <strong>WhatsApp और follow-up action</strong> को तेज़ बनाना।</li>
+      </ul>
+    </div>
 
-   <div class="about-card">
-    <div class="about-card-title">📲 ऑटोमेटेड कम्युनिकेशन</div>
-    <ul>
-     <li><strong>वन-क्लिक WhatsApp:</strong> e-KYC पेंडेंसी, DBC अपग्रेड और NCTC सब्सिडी के लिए प्री-कॉन्फ़िगर संदेश भेजने की सुविधा।</li>
-     <li><strong>स्मार्ट फिल्टर्स:</strong> उपभोक्ता की स्थिति और आवश्यकता के आधार पर डेटा को फ़िल्टर कर तुरंत संपर्क करने का विकल्प।</li>
-    </ul>
-   </div>
+    <div class="about-card">
+      <div class="about-card-title">🔐 Security & Access Control</div>
+      <ul>
+        <li><strong>PIN-Based Lock / Unlock:</strong> बिना PIN के डैशबोर्ड एक्सेस संभव नहीं।</li>
+        <li><strong>Dealer Login:</strong> डीलर कोड और PIN के माध्यम से नियंत्रित एक्सेस।</li>
+        <li><strong>PIN Recovery:</strong> सुरक्षा प्रश्न आधारित रिकवरी सिस्टम।</li>
+        <li><strong>Idle Timer:</strong> लंबे समय तक निष्क्रिय रहने पर सुरक्षा संकेत।</li>
+      </ul>
+    </div>
 
-   <div class="about-card">
-    <div class="about-card-title">📑 व्यापक MIS रिपोर्ट्स</div>
-    <ul>
-     <li><strong>15+ विस्तृत रिपोर्ट्स:</strong> मोबाइल रजिस्ट्रेशन, SV जेनरेशन, डेटा क्वालिटी, और बुकिंग सोर्स जैसे महत्वपूर्ण मॉड्यूल।</li>
-     <li><strong>क्लिक-टू-डेटा:</strong> चार्ट के किसी भी हिस्से पर क्लिक करें और सीधे संबंधित उपभोक्ता सूची तक पहुँचें।</li>
-    </ul>
-   </div>
+    <div class="about-card">
+      <div class="about-card-title">☁️ Data Handling & Architecture</div>
+      <ul>
+        <li><strong>Firebase Integration:</strong> Authentication और Firestore सपोर्ट।</li>
+        <li><strong>Local Fallback:</strong> Firebase उपलब्ध न होने पर localStorage आधारित प्रोसेसिंग।</li>
+        <li><strong>CSV / Excel Upload:</strong> (.csv, .xlsx, .xls) फाइल सपोर्ट।</li>
+        <li><strong>100% Client-Side Processing:</strong> सारा डेटा ब्राउज़र के भीतर ही प्रोसेस होता है।</li>
+        <li>Uploaded डेटा पर <strong>Filter, Sort, Pagination, Export और Print</strong> पूरी तरह लोकली होता है।</li>
+      </ul>
+    </div>
 
-   <div class="about-card">
-    <div class="about-card-title">🚀 उच्च प्रदर्शन और उपयोगिता</div>
-    <ul>
-     <li><strong>फास्ट प्रोसेसिंग:</strong> हज़ारों उपभोक्ताओं का डेटा कुछ ही सेकंड में लोड और प्रोसेस करने की क्षमता।</li>
-     <li><strong>रिस्पॉन्सिव डिज़ाइन:</strong> डेस्कटॉप के साथ-साथ मोबाइल पर भी सहज अनुभव के लिए पूरी तरह अनुकूलित।</li>
-    </ul>
-   </div>
+    <div class="about-card">
+      <div class="about-card-title">📊 MIS & Reports System</div>
+      <ul>
+        <li><strong>15+ Dynamic MIS Reports:</strong> e-KYC type-wise, Pending e-KYC vs Refill, Mobile Registration, SBC vs DBC, Beneficiary Type, Booking Source, Area Performance, Trend Analysis और Data Quality रिपोर्ट्स।</li>
+        <li><strong>Interactive Reports:</strong> हर रिपोर्ट clickable है और chart से सीधे consumer list तक drill-down करता है।</li>
+      </ul>
+    </div>
 
-   <div class="about-card">
-    <div class="about-card-title">🖨️ स्मार्ट टूल्स</div>
-    <ul>
-     <li><strong>प्रिंट-रेडी लेआउट:</strong> ऑफिस वर्क के लिए साफ-सुथरी और व्यवस्थित रिपोर्ट प्रिंटिंग सुविधा।</li>
-     <li><strong>एक्सेल एक्सपोर्ट:</strong> आगे के विश्लेषण के लिए फ़िल्टर किए गए डेटा को CSV फॉर्मेट में डाउनलोड करने का विकल्प।</li>
-    </ul>
-   </div>
+    <div class="about-card">
+      <div class="about-card-title">🧠 Smart Consumer Management</div>
+      <ul>
+        <li><strong>Consumer Number Search:</strong> सीधे उपभोक्ता विवरण देखने की सुविधा।</li>
+        <li><strong>Book-Style Detail View:</strong> उपभोक्ता की पूरी जानकारी एक modal में।</li>
+        <li>Status आधारित <strong>Pending / Completed e-KYC</strong> visual indicators।</li>
+        <li>एक-क्लिक <strong>WhatsApp Action</strong> सपोर्ट।</li>
+      </ul>
+    </div>
+
+    <div class="about-card">
+      <div class="about-card-title">📲 Action-Oriented Features</div>
+      <ul>
+        <li><strong>One-Click WhatsApp Messaging:</strong> Pending e-KYC, DBC Upgrade और NPCI / NCTC Linking के लिए।</li>
+        <li><strong>Consumer Request Module:</strong> डीलर द्वारा मैन्युअली targeted संदेश भेजने की सुविधा।</li>
+      </ul>
+    </div>
+
+    <div class="about-card">
+      <div class="about-card-title">🎨 UI / UX Capabilities</div>
+      <ul>
+        <li><strong>Sticky Header Dashboard</strong> और पूरी तरह responsive design (Desktop + Mobile)।</li>
+        <li><strong>Dark / Light Mode</strong> और font size controls।</li>
+        <li>Chart.js आधारित <strong>Charts, Heatmaps, Cards और Tables</strong>।</li>
+        <li><strong>Skeleton Loaders</strong> के साथ बेहतर user experience।</li>
+      </ul>
+    </div>
+
+    <div class="about-card">
+      <div class="about-card-title">🖨️ Productivity Tools</div>
+      <ul>
+        <li><strong>Print-Ready Reports</strong> ऑफिस उपयोग के लिए।</li>
+        <li><strong>Excel / CSV Export</strong> फ़िल्टर किए गए डेटा के साथ।</li>
+        <li>Pagination, column add/remove, date-range filters और global search।</li>
+      </ul>
+    </div>
+
   </div>
 
-  <p class="about-footer">🎯 हमारा लक्ष्य: डेटा की जटिलता को कम करना और वितरकों को डिजिटल रूप से सशक्त बनाकर "Digital India" की दिशा में एक कदम आगे बढ़ाना।</p>
- </div>
+  <p class="about-footer">
+    🧭 <strong>One-Line Verdict:</strong><br>
+    यह एक <strong>Secure, Action-Oriented और Dealer-Focused LPG e-KYC & MIS Dashboard</strong> है, 
+    जो रॉ LPG डेटा को <strong>Decision-Ready Intelligence</strong> में बदलता है और 
+    “<strong>Data → Insight → Action</strong>” के सिद्धांत पर कार्य करता है।
+  </p>
+
+</div>
+
 </div>
 <div class="active-report-container" id="requestContainer" style="display:none">
  <div class="report-header">उपभोक्ता के अनुरोध पर</div>
