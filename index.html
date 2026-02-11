@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -90,10 +90,36 @@
                     cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
                 }, { merge: true });
                 console.log("Firebase initialized successfully!");
+                // Fetch and display UPI ID after Firebase is initialized
+                fetchUpiIdAndDisplay();
             }
         } catch (error) {
             console.error("Firebase initialization error:", error);
             // Don't show alert on every page load, just log it
+        }
+    }
+
+    // Function to fetch UPI ID from Firestore and display it
+    async function fetchUpiIdAndDisplay() {
+        try {
+            if (db) {
+                const docRef = db.collection('settings').doc('appConfig');
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && data.upiId) {
+                        firebaseConfig.upiId = data.upiId; // Update firebaseConfig with fetched UPI ID
+                        const upiIdElement = document.getElementById('displayUpiId');
+                        if (upiIdElement) {
+                            upiIdElement.textContent = `UPI ID for Payment: ${data.upiId}`;
+                        }
+                    }
+                } else {
+                    console.log("No appConfig document found in Firestore.");
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching UPI ID:", error);
         }
     }
     
@@ -124,6 +150,72 @@
             overlay.style.display = 'none';
         }
     }
+
+    // Function to show custom toast notifications
+    function showToast(message, type = 'info', duration = 3000) {
+        const toastContainer = document.getElementById('toastContainer') || (() => {
+            const div = document.createElement('div');
+            div.id = 'toastContainer';
+            Object.assign(div.style, {
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                zIndex: '10000',
+                display: 'flex',
+                flexDirection: 'column-reverse', // New toasts appear above old ones
+                gap: '10px'
+            });
+            document.body.appendChild(div);
+            return div;
+        })();
+
+        const toast = document.createElement('div');
+        toast.className = 'notification-toast';
+        
+        let icon = '';
+        let borderColor = '';
+
+        switch (type) {
+            case 'success':
+                icon = '✅';
+                borderColor = 'var(--success)';
+                break;
+            case 'error':
+                icon = '❌';
+                borderColor = 'var(--danger)';
+                break;
+            case 'warning':
+                icon = '⚠️';
+                borderColor = '#f1c40f'; // Congrats color for warning
+                break;
+            case 'info':
+            default:
+                icon = 'ℹ️';
+                borderColor = 'var(--primary)';
+                break;
+        }
+
+        toast.style.borderLeftColor = borderColor;
+        toast.innerHTML = `<div class="icon">${icon}</div><div class="msg">${message}</div>`;
+        
+        toastContainer.appendChild(toast);
+
+        // Auto-dismiss
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.5s ease-in forwards';
+            toast.addEventListener('animationend', () => toast.remove());
+        }, duration);
+    }
+
+    // Add slideOut animation for toasts
+    const styleSheet = document.styleSheets[0];
+    styleSheet.insertRule(`
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `, styleSheet.cssRules.length);
+
 
     function handleRegPackageChange() {
         const regPackageSelect = document.getElementById('regPackage');
@@ -1236,7 +1328,8 @@ const firebaseConfig = {
   storageBucket: "deepak-ekyc.firebasestorage.app",
   messagingSenderId: "837268787758",
   appId: "1:837268787758:web:4f9af5a690c37fbd3685bf",
-  measurementId: "G-ZZNQS01BFG"
+  measurementId: "G-ZZNQS01BFG",
+  upiId: "" // Placeholder for UPI ID
 };
 
 // Initialize Firebase with error handling
@@ -1256,7 +1349,7 @@ function handleFirebaseError(error) {
             errorMessage = error.message;
             break;
     }
-    alert(errorMessage);
+    showToast(errorMessage, 'error');
     console.error("Firebase Error:", error.code, error.message);
     return errorMessage;
 }
@@ -1345,7 +1438,7 @@ function handleFirebaseError(error) {
     <div class="modal-content">
         <span class="close-button" onclick="document.getElementById('registrationModal').style.display='none'">&times;</span>
         <h2>रजिस्टर करें</h2>
-        <div style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #333;">UPI ID for Payment: 8002074620@ybl</div>
+
         <div class="registration-error" id="registrationError"></div>
         <select id="regPackage" class="modal-input" required>
             <option value="">पैकेज चुनें</option>
@@ -1366,6 +1459,7 @@ function handleFirebaseError(error) {
             <p><strong>डेमो लॉगिन आईडी:</strong> <span id="displayDemoDealerCode"></span></p>
             <p><strong>डेमो पिन:</strong> <span id="displayDemoPin"></span></p>
         </div>
+        <div id="displayUpiId" style="text-align: center; margin-top: 15px; font-weight: bold; color: var(--primary);"></div>
         <button id="regSubmitButton" class="modal-button" onclick="registerUser()">रजिस्टर करें</button>
     </div>
 </div>
@@ -1984,7 +2078,7 @@ function handleFile(f){
      });
 
      if (!allFound) {
-       alert(`त्रुटि: फ़ाइल में आवश्यक कॉलम गायब हैं: ${missing.join(', ')}\n\nकृपया पक्का करें कि आपकी फ़ाइल में "Consumer No" और "Consumer Name" कॉलम मौजूद हैं।\n\nउपलब्ध कॉलम: ${headers.slice(0,10).join(', ')}...`);
+       showToast(`त्रुटि: फ़ाइल में आवश्यक कॉलम गायब हैं: ${missing.join(', ')}\n\nकृपया पक्का करें कि आपकी फ़ाइल में "Consumer No" और "Consumer Name" कॉलम मौजूद हैं।\n\nउपलब्ध कॉलम: ${headers.slice(0,10).join(', ')}...`, 'error');
        loading.style.display = 'none';
        return;
      }
@@ -2025,14 +2119,14 @@ function handleFile(f){
    const rh=el('reportHeader');if(rh)rh.textContent='';
    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   } catch (err) {
-   alert('त्रुटि: ' + (err.message || 'फ़ाइल प्रसंस्करण में समस्या आई।'));
+   showToast('त्रुटि: ' + (err.message || 'फ़ाइल प्रसंस्करण में समस्या आई।'), 'error');
    console.error(err);
   } finally {
    loading.style.display = 'none';
   }
  };
  r.onerror = () => {
-   alert('फ़ाइल पढ़ने में त्रुटि आई।');
+   showToast('फ़ाइल पढ़ने में त्रुटि आई।', 'error');
    loading.style.display = 'none';
  };
  ext==='csv'?r.readAsText(f):r.readAsArrayBuffer(f);
@@ -2293,7 +2387,7 @@ function applyAll(custom){
  if(ekycFilter.value)f=f.filter(d=>d['EKYC Status']===ekycFilter.value);if(areaFilter.value)f=f.filter(d=>d['Delivery Area']===areaFilter.value);if(natureFilter.value)f=f.filter(d=>d['Consumer Nature']===natureFilter.value);if(consumerStatusFilter.value)f=f.filter(d=>(d['Consumer Status']||'')===consumerStatusFilter.value);if(connectionTypeFilter.value)f=f.filter(d=>(d['Connection Type']||'')===connectionTypeFilter.value);if(pfmsFilter.value)f=f.filter(d=>(d['PFMSBeneficiaryType']||'')===pfmsFilter.value);if(bookingSourceFilter.value)f=f.filter(d=>(d['Last Refill BookingSource']||'')===bookingSourceFilter.value);if(mobileStatusFilter.value==='Registered')f=f.filter(d=>d['Mobile No']);if(mobileStatusFilter.value==='Unregistered')f=f.filter(d=>!d['Mobile No']);const rf=parseInputDate(refillFrom.value),rt=parseInputDate(refillTo.value);if(rf||rt){f=f.filter(d=>{const ld=parseDate(d['LastRefillDate']);if(!ld)return false;return (!rf||ld>=rf)&&(!rt||ld<=rt)})}const ef=parseInputDate(ekycFrom.value),et=parseInputDate(ekycTo.value);if(ef||et){f=f.filter(d=>{const ed=parseDate(d['EKYC Date']);if(!ed)return false;return (!ef||ed>=ef)&&(!et||ed<=et)})}if(customFilter)f=f.filter(customFilter);if(tableSearch.value){const q=tableSearch.value.toLowerCase();f=f.filter(o=>Object.values(o).some(v=>String(v).toLowerCase().includes(q)))}if(sortBy.value){f.sort((a,b)=>{const A=(a[sortBy.value]||'').toString();const B=(b[sortBy.value]||'').toString();return sortOrder.value==='asc'?A.localeCompare(B,undefined,{numeric:true}):B.localeCompare(A,undefined,{numeric:true})})}filteredData=f;updateFilterOptions(data);updateSummaryCards();currentPage=1;renderPage();renderReports();}
 
 [ekycFilter,areaFilter,natureFilter,consumerStatusFilter,connectionTypeFilter,pfmsFilter,bookingSourceFilter,mobileStatusFilter,sortBy,sortOrder,refillFrom,refillTo,ekycFrom,ekycTo].forEach(x=>x.onchange=()=>applyAll());tableSearch.oninput=()=>applyAll();
-viewBtn.onclick=()=>{const no=consumerSearch.value.trim();if(!no)return alert('Enter Consumer No');openBook(no)};
+viewBtn.onclick=()=>{const no=consumerSearch.value.trim();if(!no)return showToast('उपभोक्ता संख्या दर्ज करें', 'warning');openBook(no)};
 resetBtn.onclick=()=>{
  ekycFilter.value='';areaFilter.value='';natureFilter.value='';consumerStatusFilter.value='';connectionTypeFilter.value='';pfmsFilter.value='';bookingSourceFilter.value='';mobileStatusFilter.value='';sortBy.value='';sortOrder.value='asc';consumerSearch.value='';tableSearch.value='';
  refillFrom.value='';refillTo.value='';ekycFrom.value='';ekycTo.value='';
@@ -2313,7 +2407,7 @@ resetBtn.onclick=()=>{
  customFilter=null;
  applyAll();
 };
-requestSend.onclick=()=>{const num=(requestMobile&&requestMobile.value||'').trim();const type=(requestType&&requestType.value)||'eKYC';const url=buildRequestWhatsAppLink(num,type);if(!url)return alert('Valid mobile number दर्ज करें');window.open(url,'_blank')};
+requestSend.onclick=()=>{const num=(requestMobile&&requestMobile.value||'').trim();const type=(requestType&&requestType.value)||'eKYC';const url=buildRequestWhatsAppLink(num,type);if(!url)return showToast('वैध मोबाइल नंबर दर्ज करें', 'warning');window.open(url,'_blank')};
 
 toggleCardsBtn.onclick=()=>{ openCardsModal(); };
 
@@ -2389,7 +2483,7 @@ el('submitPin').onclick=async()=>{
   const currentDealer = localStorage.getItem('current-dealer');
   
   if (!currentDealer) {
-    alert('कृपया पहले लॉगिन करें!');
+    showToast('कृपया पहले लॉगिन करें!', 'warning');
     el('pinModal').style.display = 'none';
     el('loginModal').style.display = 'flex';
     return;
@@ -2409,13 +2503,13 @@ el('submitPin').onclick=async()=>{
       el('pinModal').style.display = 'none';
       toggleLock(false);
     } else {
-      alert('गलत PIN!');
+      showToast('गलत PIN!', 'error');
       el('pinInput').value = '';
       el('pinInput').focus();
     }
   } catch (error) {
     console.error('Error during pin unlock:', error);
-    alert('पुनः अनलॉक में समस्या हुई! कृपया बाद में पुनः प्रयास करें।');
+    showToast('पुनः अनलॉक में समस्या हुई! कृपया बाद में पुनः प्रयास करें।', 'error');
   } finally {
     // Reset button state
     const submitBtn = el('submitPin');
@@ -2451,11 +2545,11 @@ el('saveRecovery').onclick = () => {
   const q = el('securityQuestion').value;
   const a = el('securityAnswer').value.trim().toLowerCase();
   
-  if (!a) return alert('कृपया उत्तर दर्ज करें');
+  if (!a) return showToast('कृपया उत्तर दर्ज करें', 'warning');
   
   localStorage.setItem('security-question', q);
   localStorage.setItem('security-answer', a);
-  alert('सुरक्षा प्रश्न सफलतापूर्वक सहेजा गया!');
+  showToast('सुरक्षा प्रश्न सफलतापूर्वक सहेजा गया!', 'success');
   el('recoveryModal').style.display = 'none';
 };
 
@@ -2466,15 +2560,15 @@ el('verifyRecovery').onclick = () => {
     const newPin = prompt('नया 4-अंकों का PIN दर्ज करें:', '1234');
     if (newPin && newPin.length === 4 && !isNaN(newPin)) {
       localStorage.setItem('dashboard-pin', newPin);
-      alert('PIN सफलतापूर्वक बदल दिया गया है!');
+      showToast('PIN सफलतापूर्वक बदल दिया गया है!', 'success');
       el('recoveryModal').style.display = 'none';
       el('pinInput').value = '';
       el('pinInput').focus();
     } else {
-      alert('कृपया वैध 4-अंकों का PIN दर्ज करें');
+      showToast('कृपया वैध 4-अंकों का PIN दर्ज करें', 'warning');
     }
   } else {
-    alert('गलत उत्तर!');
+    showToast('गलत उत्तर!', 'error');
   }
 };
 
@@ -2709,7 +2803,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Guard clause: prevent empty credentials submission
       if (!dealerCode || !pin) {
-        alert('कृपया डीलर कोड और PIN दर्ज करें!');
+        showToast('कृपया डीलर कोड और PIN दर्ज करें!', 'warning');
         return;
       }
       
@@ -2724,7 +2818,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (dealerData) {
             // Check if the user is blocked
             if (dealerData.blocked) {
-              alert('Your ID is blocked, Please Contact Admin');
+              showToast('Your ID is blocked, Please Contact Admin', 'error');
               submitLoginBtn.disabled = false;
               submitLoginBtn.textContent = 'लॉगिन करें';
               return;
@@ -2736,7 +2830,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDate.setHours(0, 0, 0, 0); // Normalize current date to compare only date part
 
             if (validTillDate < currentDate) {
-              alert('Dear User, Your Plan has been expired, for renew Please contact Admin');
+              showToast('Dear User, Your Plan has been expired, for renew Please contact Admin', 'error');
               submitLoginBtn.disabled = false;
               submitLoginBtn.textContent = 'लॉगिन करें';
               return;
@@ -2748,18 +2842,18 @@ document.addEventListener('DOMContentLoaded', () => {
             loginModal.style.display = 'none';
             toggleLock(false);
 
-            alert(`लॉगिन सफल, प्रिय ${dealerData.dealerName || 'डीलर'} (कोड: ${dealerData.dealerCode}), आपका आईडी "${dealerData.package}" पैकेज का है और यह "${dealerData.validTill}" तक वैध है।`);
+            showToast(`लॉगिन सफल, प्रिय ${dealerData.dealerName || 'डीलर'} (कोड: ${dealerData.dealerCode}), आपका आईडी "${dealerData.package}" पैकेज का है और यह "${dealerData.validTill}" तक वैध है।`, 'success');
           } else {
-            alert('लॉगिन सफल! डीलर डेटा प्राप्त करने में असमर्थ।');
+            showToast('लॉगिन सफल! डीलर डेटा प्राप्त करने में असमर्थ।', 'warning');
           }
         } else {
-          alert('गलत डीलर कोड या PIN!');
+          showToast('गलत डीलर कोड या PIN!', 'error');
           loginPin.value = '';
           loginPin.focus();
         }
       } catch (error) {
         console.error('Login error:', error);
-        alert('लॉगिन में समस्या हुई! कृपया बाद में पुनः प्रयास करें।');
+        showToast('लॉगिन में समस्या हुई! कृपया बाद में पुनः प्रयास करें।', 'error');
       } finally {
         // Reset button state
         submitLoginBtn.disabled = false;
@@ -2805,7 +2899,7 @@ function logout() {
         loginModal.style.display = 'flex';
       }
     }, 100);
-    alert('लॉगआउट सफल!');
+    showToast('लॉगआउट सफल!', 'info');
   }
 }
 
@@ -3488,7 +3582,7 @@ function openBook(no){
   if(flashEKYC) flashEKYC.style.display='none';
   if(flashMobile) flashMobile.style.display='none';
   const c=data.find(d=>String(d['Consumer No']).trim()===String(no).trim());
-  if(!c) return alert('Consumer not found');
+  if(!c) return showToast('उपभोक्ता नहीं मिला', 'warning');
   
   if(flashEKYC && c['EKYC Status']!=='Completed') flashEKYC.style.display='block';
   if(flashMobile && !c['Mobile No']) flashMobile.style.display='block';
@@ -3604,7 +3698,7 @@ function doPrintFixed(){
 }
 
 function exportToPDF(){const tempDiv=document.createElement('div');const headerRow='<tr style="background:#ecf0f1;font-weight:bold;position:sticky;top:0">'+visibleCols.map(c=>`<th style="border:1px solid #000;padding:8px;background:#ecf0f1;font-weight:bold">${c}</th>`).join('')+'</tr>';let tableHTML='<table style="border-collapse:collapse;width:100%;font-size:11px">';const rowsPerHeader=20;filteredData.forEach((o,i)=>{if(i%rowsPerHeader===0){tableHTML+=headerRow}tableHTML+='<tr style="page-break-inside:avoid;height:auto">'+visibleCols.map(c=>`<td style="border:1px solid #ccc;padding:5px;word-wrap:break-word">${o[c]||''}</td>`).join('')+'</tr>'});tableHTML+='</table>';tempDiv.innerHTML=tableHTML;const opt={margin:[8,8,8,8],filename:'Filtered_Data.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{orientation:'landscape',unit:'mm',format:'a4'}};html2pdf().set(opt).from(tempDiv).save()}
-function exportToCSV(){if(filteredData.length===0){alert('No data to export');return}const cols=visibleCols;const rows=[cols.join(',')].concat(filteredData.map(o=>cols.map(c=>String(o[c]||'').replace(/"/g,'""')).map(v=>`"${v}"`).join(',')));const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Filtered_Data.csv';document.body.appendChild(a);a.click();document.body.removeChild(a)}
+function exportToCSV(){if(filteredData.length===0){showToast('निर्यात करने के लिए कोई डेटा नहीं है', 'warning');return}const cols=visibleCols;const rows=[cols.join(',')].concat(filteredData.map(o=>cols.map(c=>String(o[c]||'').replace(/"/g,'""')).map(v=>`"${v}"`).join(',')));const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Filtered_Data.csv';document.body.appendChild(a);a.click();document.body.removeChild(a)}
  
 toggleLock(true);
 showAbout();
@@ -3764,18 +3858,18 @@ showAbout();
                         status: 'pending',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    alert('पंजीकरण सफल! आपका अनुरोध विचाराधीन है।');
+                    showToast('पंजीकरण सफल! आपका अनुरोध विचाराधीन है।', 'success');
 
 
                 } else {
                     // Fallback for localStorage
-                    alert('पंजीकरण सफल! आपका अनुरोध विचाराधीन है। (Firebase उपलब्ध नहीं है, डेटा सहेजा नहीं गया)');
+                    showToast('पंजीकरण सफल! आपका अनुरोध विचाराधीन है। (Firebase उपलब्ध नहीं है, डेटा सहेजा नहीं गया)', 'warning');
                 }
                 hideRegistrationModal();
             } catch (error) {
                 console.error('Registration error:', error);
                 registrationError.textContent = 'पंजीकरण में त्रुटि हुई: ' + error.message;
-                alert('पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+                showToast('पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।', 'error');
             } finally {
                 hideLoadingOverlay();
             }
@@ -3824,13 +3918,13 @@ showAbout();
                     isRead: false // Add isRead field with default false
                 });
 
-                alert('आपकी प्रतिक्रिया सफलतापूर्वक सबमिट कर दी गई है। धन्यवाद!');
+                showToast('आपकी प्रतिक्रिया सफलतापूर्वक सबमिट कर दी गई है। धन्यवाद!', 'success');
                 document.getElementById('feedbackText').value = ''; // Clear the textarea
                 hideFeedbackModal();
             } catch (error) {
                 console.error('Error submitting feedback:', error);
                 feedbackError.textContent = 'फीडबैक सबमिट करने में त्रुटि हुई: ' + error.message;
-                alert('फीडबैक सबमिट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+                showToast('फीडबैक सबमिट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।', 'error');
             } finally {
                 hideLoadingOverlay();
             }
