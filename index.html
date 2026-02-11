@@ -1,9 +1,11 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>HPCL LPG उपभोक्ता ईकेवाईसी और MIS डैशबोर्ड</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google Fonts - Roboto -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <!-- Firebase SDK - Loaded with error handling -->
 <script>
     // Load Firebase SDK asynchronously with error handling
@@ -31,8 +33,21 @@
                 firestoreScript.crossOrigin = 'anonymous';
                 firestoreScript.onload = function() {
                     console.log('Firebase Firestore SDK loaded');
-                    // Initialize Firebase once all SDKs are loaded
-                    initFirebase();
+                    // Load Storage SDK
+                    const storageScript = document.createElement('script');
+                    storageScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js';
+
+                    storageScript.crossOrigin = 'anonymous';
+                    storageScript.onload = function() {
+                        console.log('Firebase Storage SDK loaded');
+                        // Initialize Firebase once all SDKs are loaded
+                        initFirebase();
+                    };
+                    storageScript.onerror = function() {
+                        console.error('Failed to load Firebase Storage SDK');
+                        initFirebase(); // Try to initialize anyway with what we have
+                    };
+                    document.head.appendChild(storageScript);
                 };
                 firestoreScript.onerror = function() {
                     console.error('Failed to load Firebase Firestore SDK');
@@ -67,12 +82,13 @@
                 auth = firebase.auth();
                 // Initialize Firestore with settings to avoid Listen/channel errors
                 db = firebase.firestore();
+                storage = firebase.storage();
                 // Disable persistence if causing issues
                 db.settings({
                     persistence: false,
                     experimentalForceLongPolling: true, // Use long polling instead of WebSockets
                     cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-                });
+                }, { merge: true });
                 console.log("Firebase initialized successfully!");
             }
         } catch (error) {
@@ -82,7 +98,95 @@
     }
     
     // Start loading Firebase SDK when DOM is ready
-    document.addEventListener('DOMContentLoaded', loadFirebaseSDK);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFirebaseSDK();
+        const regPackageSelect = document.getElementById('regPackage');
+        if (regPackageSelect) {
+            regPackageSelect.addEventListener('change', handleRegPackageChange);
+            handleRegPackageChange(); // Call on initial load
+        }
+    });
+
+    // Show loading overlay
+    function showLoadingOverlay(message = 'Loading...') {
+        const overlay = document.getElementById('loadingOverlay');
+        const messageElement = document.getElementById('loadingMessage');
+        if (overlay && messageElement) {
+            messageElement.textContent = message;
+            overlay.style.display = 'flex';
+        }
+    }
+
+    // Hide loading overlay
+    function hideLoadingOverlay() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function handleRegPackageChange() {
+        const regPackageSelect = document.getElementById('regPackage');
+        const regUtrNumberInput = document.getElementById('regUtrNumber');
+        const regPaymentDateInput = document.getElementById('regPaymentDate');
+        const regDealerCodeInput = document.getElementById('regDealerCode');
+        const regPinInput = document.getElementById('regPin');
+        const regConfirmPinInput = document.getElementById('regConfirmPin');
+        const regDealerNameInput = document.getElementById('regDealerName');
+        const regMobileNumberInput = document.getElementById('regMobileNumber');
+
+        if (regPackageSelect.value === 'demo') {
+            // Hide UTR and Payment Date fields
+            if (regUtrNumberInput) {
+                regUtrNumberInput.style.display = 'none';
+                regUtrNumberInput.removeAttribute('required');
+                regUtrNumberInput.value = ''; // Clear value
+            }
+            if (regPaymentDateInput) {
+                regPaymentDateInput.style.display = 'none';
+                regPaymentDateInput.removeAttribute('required');
+                regPaymentDateInput.value = ''; // Clear value
+            }
+
+            // Ensure other fields are visible and required (they should be by default)
+            // No auto-fill or read-only for demo, user enters their own details
+            if (regDealerCodeInput) {
+                regDealerCodeInput.readOnly = false;
+            }
+            if (regPinInput) {
+                regPinInput.readOnly = false;
+            }
+            if (regConfirmPinInput) {
+                regConfirmPinInput.readOnly = false;
+            }
+
+        } else {
+            // Revert changes for other packages
+            if (regUtrNumberInput) {
+                regUtrNumberInput.style.display = 'block';
+                regUtrNumberInput.setAttribute('required', 'required');
+            }
+            if (regPaymentDateInput) {
+                regPaymentDateInput.style.display = 'block';
+                regPaymentDateInput.setAttribute('required', 'required');
+            }
+
+            // Ensure fields are editable for other packages
+            if (regDealerCodeInput) {
+                regDealerCodeInput.readOnly = false;
+            }
+            if (regPinInput) {
+                regPinInput.readOnly = false;
+            }
+            if (regConfirmPinInput) {
+                regConfirmPinInput.readOnly = false;
+            }
+        }
+    }
+
+
+
+
 </script>
 <style>
 :root {
@@ -94,6 +198,7 @@
   --primaryHover: #1d4ed8;
   --border: #e5e7eb;
   --shadow: 0 8px 20px rgba(0,0,0,.08);
+  --shadow-sm: 0 4px 10px rgba(0,0,0,.05);
   --success: #10b981;
   --danger: #ef4444;
   --wa: #25D366;
@@ -138,6 +243,8 @@ body.dark-mode {
   --muted: #94a3b8;
   --border: #334155;
   --shadow: 0 8px 20px rgba(0,0,0,.4);
+  --shadow-lg: 0 12px 30px rgba(0,0,0,.15);
+  --shadow-sm: 0 4px 10px rgba(0,0,0,.2);
   --accent: #1e293b;
   --card-bg: #1e293b;
 }
@@ -169,12 +276,13 @@ body.font-lg select, body.font-lg input, body.font-lg button { font-size: 16px; 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 240px 20px 20px 20px; /* Increased top padding to accommodate fixed header */
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Header & Messages */
@@ -431,6 +539,157 @@ body.compact .summary-card .lbl { font-size: 10px; }
   .cards-list { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); }
 }
 
+@media (max-width: 480px) {
+  .modal-content h2 {
+    font-size: 24px; /* Smaller title on very small screens */
+  }
+  .modal-input, .modal-file-input, .modal-content select, .modal-content button {
+    padding: 10px; /* Slightly less padding for inputs/buttons */
+    font-size: 14px; /* Smaller font size */
+  }
+}
+
+/* Registration Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 25000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  align-items: center;
+  justify-content: center;
+  opacity: 0; /* Start hidden for animation */
+  transition: opacity 0.3s ease-in-out; /* Smooth fade-in for backdrop */
+}
+
+.modal.active {
+  opacity: 1; /* Fade in when active */
+}
+
+.modal-content {
+  background-color: var(--surface);
+  margin: auto;
+  padding: 30px; /* Increased padding */
+  border: 1px solid var(--border);
+  width: 90%; /* Adjusted width */
+  max-width: 550px; /* Increased max-width */
+  border-radius: 15px; /* Slightly more rounded corners */
+  box-shadow: var(--shadow-lg); /* More prominent shadow */
+  position: relative;
+  transform: scale(0.9); /* Start smaller for animation */
+  opacity: 0; /* Start hidden for animation */
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* Smooth scale and fade */
+}
+
+.modal.active .modal-content {
+  transform: scale(1); /* Scale to normal size */
+  opacity: 1; /* Fade in */
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-content h2 {
+  font-size: 28px; /* Larger font size */
+  color: var(--primary); /* Use primary color */
+  text-align: center;
+  margin-bottom: 20px; /* More space below title */
+  font-weight: 700; /* Bolder font */
+  letter-spacing: -0.5px; /* Slightly tighter letter spacing */
+}
+
+.close-button {
+  color: var(--muted);
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+        #registrationForm {
+            padding: 10px; /* Add some padding to the form */
+        }
+
+        .modal-input, .modal-file-input, .modal-content select {
+            width: 100%;
+            padding: 12px; /* Increased padding */
+            margin: 8px 0 15px 0; /* Adjusted margin-bottom for more space */
+            display: inline-block;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+.modal-input:focus, .modal-file-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-button {
+  background-color: var(--primary);
+  color: white;
+  padding: 12px 15px; /* Increased padding */
+  margin: 8px 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 600; /* Added font-weight */
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.modal-button:hover {
+  background-color: var(--primaryHover);
+  transform: translateY(-1px); /* Subtle lift effect */
+}
+
+.modal-button:active {
+  transform: translateY(0); /* Press effect */
+}
+
+.registration-error {
+  color: var(--danger);
+  margin-bottom: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.file-upload-label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+
+
 
 select, input, button {
   padding: 8px 12px;
@@ -497,6 +756,18 @@ button:hover { background: var(--primaryHover); }
   border-color: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(37, 99, 235, .35);
+}
+
+#registerBtn {
+  background: var(--success); /* Green background */
+  color: #fff; /* White text */
+  border-color: var(--success);
+  cursor: pointer;
+}
+
+#registerBtn:hover {
+  background: #1ebe57; /* Slightly darker green on hover */
+  border-color: #1ebe57;
 }
 
 .nav-dropdown { position: relative; display: inline-block; }
@@ -959,17 +1230,17 @@ const el=id=>document.getElementById(id);
 
 // Firebase configuration (Real values from Firebase Console)
 const firebaseConfig = {
-    apiKey: "AIzaSyCw9O6XGJ0EL4unyr4akbUJBkzE3enUUfU",
-    authDomain: "deepak-ekyc.firebaseapp.com",
-    projectId: "deepak-ekyc",
-    storageBucket: "deepak-ekyc.firebasestorage.app",
-    messagingSenderId: "837268787758",
-    appId: "1:837268787758:web:4f9af5a690c37fbd3685bf",
-    measurementId: "G-ZZNQS01BFG"
+  apiKey: "AIzaSyCw9O6XGJ0EL4unyr4akbUJBkzE3enUUfU",
+  authDomain: "deepak-ekyc.firebaseapp.com",
+  projectId: "deepak-ekyc",
+  storageBucket: "deepak-ekyc.firebasestorage.app",
+  messagingSenderId: "837268787758",
+  appId: "1:837268787758:web:4f9af5a690c37fbd3685bf",
+  measurementId: "G-ZZNQS01BFG"
 };
 
 // Initialize Firebase with error handling
-let app, auth, db;
+let app, auth, db, storage;
 
 // Firebase error handling helper
 function handleFirebaseError(error) {
@@ -1011,7 +1282,7 @@ function handleFirebaseError(error) {
    <button id="viewBtn">उपभोक्ता का विवरण दिखाएं</button>
    <button id="resetBtn">रीसेट करें</button>
   </div>
-
+<!-- Navbar -->
   <div class="navbar" style="margin:12px 0 12px 0;">
    <div class="nav-item" onclick="showConsumerData(this)">उपभोक्ता विवरण</div>
    <div class="nav-dropdown">
@@ -1037,18 +1308,20 @@ function handleFirebaseError(error) {
    </div>
    <div class="nav-item" onclick="showRequest(this)">उपभोक्ता अनुरोध</div>
    <div class="nav-item active" onclick="showAbout(this)">डैशबोर्ड के बारे में</div>
+   <div class="nav-item" onclick="showFeedbackModal()">फीडबैक</div>
    <div class="nav-item" id="toggleCardsBtn">📊 कार्ड दिखाएं</div>
    <div id="dataUpdateMsg" class="data-update-msg" style="display:none; margin-right: 15px; padding: 4px 12px; background: var(--surface); border-radius: 20px; border: 1px solid var(--border); font-size: 13px;">
     डेटा <span id="maxUpdateDate">dd-mm-yyyy</span> तक का अपडेटेड है
    </div>
    <div class="nav-item" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">Upload File</div>
    <div class="nav-item" id="loginBtn" onclick="document.getElementById('loginModal').style.display = 'flex'">लॉगिन</div>
+   <div class="nav-item" id="registerBtn">रजिस्टर</div>
    <div class="nav-item" id="logoutBtn" onclick="logout()">लॉगआउट</div>
    <span id="idleTimer" style="margin-left:auto; margin-right:8px; font-size:12px; color:#e67e22; font-weight:bold; background:#fff; padding:2px 8px; border-radius:20px; border:1px solid #fed7aa; display:none; align-content: space-around;"></span>
   </div>
 </div>
 
-
+<!-- Card View -->
 <div class="cards-modal" id="cardsModal" aria-hidden="true">
   <div class="cards-modal-backdrop" id="cardsModalBackdrop"></div>
   <div class="cards-modal-body" role="dialog" aria-modal="true" aria-labelledby="cardsModalTitle">
@@ -1065,6 +1338,47 @@ function handleFirebaseError(error) {
       <!-- populated dynamically -->
     </div>
   </div>
+</div>
+
+<!-- Registration Modal -->
+<div id="registrationModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="document.getElementById('registrationModal').style.display='none'">&times;</span>
+        <h2>रजिस्टर करें</h2>
+        <div style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #333;">UPI ID for Payment: 8002074620@ybl</div>
+        <div class="registration-error" id="registrationError"></div>
+        <select id="regPackage" class="modal-input" required>
+            <option value="">पैकेज चुनें</option>
+                    <option value="demo">Demo - 1 दिन</option>
+            <option value="basic">Basic Package (500 रुपये) - 7 दिन</option>
+            <option value="premium">Premium Package (2000 रुपये) - 1 महिना</option>
+            <option value="enterprise">Enterprise Package (5000 रुपये) - 1 साल</option>
+        </select>
+        <input type="text" id="regDealerCode" placeholder="डीलर कोड (8-अंक)" class="modal-input" maxlength="8" pattern="\d{8}" required>
+        <input type="text" id="regDealerName" placeholder="डीलर का नाम" class="modal-input" required>
+        <input type="tel" id="regMobileNumber" placeholder="मोबाइल नंबर (10-अंक)" class="modal-input" maxlength="10" pattern="\d{10}" required>
+        <input type="email" id="regEmail" placeholder="ईमेल आईडी" class="modal-input" required>
+        <input type="password" id="regPin" placeholder="पिन (4-अंक)" class="modal-input" maxlength="4" pattern="\d{4}" required>
+        <input type="password" id="regConfirmPin" placeholder="पिन की पुष्टि करें" class="modal-input" maxlength="4" pattern="\d{4}" required>
+        <input type="text" id="regUtrNumber" placeholder="UTR नंबर" class="modal-input" required>
+        <input type="date" id="regPaymentDate" placeholder="भुगतान की तारीख" class="modal-input" required>
+        <div id="demoLoginDetailsDisplay" style="display: none; margin-top: 15px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background-color: var(--bg);">
+            <p><strong>डेमो लॉगिन आईडी:</strong> <span id="displayDemoDealerCode"></span></p>
+            <p><strong>डेमो पिन:</strong> <span id="displayDemoPin"></span></p>
+        </div>
+        <button id="regSubmitButton" class="modal-button" onclick="registerUser()">रजिस्टर करें</button>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedbackModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="hideFeedbackModal()">&times;</span>
+        <h2>फीडबैक दें</h2>
+        <div class="registration-error" id="feedbackError"></div>
+        <textarea id="feedbackText" class="modal-input" placeholder="अपनी प्रतिक्रिया यहाँ लिखें..." rows="5" required></textarea>
+        <button class="modal-button" onclick="submitFeedback()">फीडबैक सबमिट करें</button>
+    </div>
 </div>
 
 <div class="upload-area" style="display: none;">
@@ -2214,7 +2528,7 @@ async function getDealerCredentials() {
     
     if (db) {
       // Try Firebase first if available
-      const snapshot = await db.collection('dashboard-credentials').get();
+      const snapshot = await db.collection('book-view-credentials').get();
       
       // Convert Firestore snapshot to credentials object
       snapshot.forEach(doc => {
@@ -2224,24 +2538,20 @@ async function getDealerCredentials() {
       console.log('Credentials loaded from Firebase');
     } else {
       // Fallback to localStorage if Firebase is not available
-      credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      credentials = JSON.parse(localStorage.getItem('book-view-credentials') || '{}');
       console.log('Credentials loaded from localStorage (Firebase not available)');
     }
     
-    // If no credentials found, return default
+    // If no credentials found, return empty object
     if (Object.keys(credentials).length === 0) {
-      return {
-        '12345678': '1234'
-      };
+      return {};
     }
     
     return credentials;
   } catch (error) {
     console.error('Error getting credentials:', error);
-    // Fallback to default credentials on error
-    return {
-      '12345678': '1234'
-    };
+    // Fallback to empty credentials on error
+    return {};
   }
 }
 
@@ -2250,16 +2560,16 @@ async function addDealerCredential(dealerCode, pin) {
   try {
     if (db) {
       // Save to Firestore if Firebase is available
-      await db.collection('dashboard-credentials').doc(dealerCode).set({
+      await db.collection('book-view-credentials').doc(dealerCode).set({
         pin: pin,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       console.log('Credential added to Firebase');
     } else {
       // Fallback to localStorage if Firebase is not available
-      let credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      let credentials = JSON.parse(localStorage.getItem('book-view-credentials') || '{}');
       credentials[dealerCode] = pin;
-      localStorage.setItem('dashboard-credentials', JSON.stringify(credentials));
+      localStorage.setItem('book-view-credentials', JSON.stringify(credentials));
       console.log('Credential added to localStorage (Firebase not available)');
     }
   } catch (error) {
@@ -2273,37 +2583,46 @@ async function isValidCredentials(dealerCode, pin) {
   try {
     if (db) {
       // Check Firebase if available
-      const docRef = db.collection('dashboard-credentials').doc(dealerCode);
+      const docRef = db.collection('book-view-credentials').doc(dealerCode);
       const doc = await docRef.get();
-      
+      console.log('isValidCredentials - Firebase check:');
+      console.log('  dealerCode:', dealerCode);
+      console.log('  pin:', pin);
+      console.log('  doc.exists:', doc.exists);
       if (doc.exists) {
+        console.log('  doc.data().pin:', doc.data().pin);
         return doc.data().pin === pin;
       }
     } else {
       // Check localStorage if Firebase is not available
-      const credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
+      const credentials = JSON.parse(localStorage.getItem('book-view-credentials') || '{}');
       if (dealerCode in credentials) {
         return credentials[dealerCode] === pin;
       }
     }
     
-    // Fallback to default credentials if dealer code not found in either Firebase or localStorage
-    return dealerCode === '12345678' && pin === '1234';
+
   } catch (error) {
     console.error('Error checking credentials:', error);
     
-    // Try localStorage as last resort
-    try {
-      const credentials = JSON.parse(localStorage.getItem('dashboard-credentials') || '{}');
-      if (dealerCode in credentials) {
-        return credentials[dealerCode] === pin;
+    return false;
+  }
+}
+
+// Get full dealer data from Firebase
+async function getDealerData(dealerCode) {
+  try {
+    if (db) {
+      const docRef = db.collection('book-view-credentials').doc(dealerCode);
+      const doc = await docRef.get();
+      if (doc.exists) {
+        return doc.data();
       }
-    } catch (localStorageError) {
-      console.error('Error checking credentials in localStorage:', localStorageError);
     }
-    
-    // Fallback to default credentials on error
-    return dealerCode === '12345678' && pin === '0000';
+    return null;
+  } catch (error) {
+    console.error('Error getting dealer data:', error);
+    return null;
   }
 }
 
@@ -2400,13 +2719,39 @@ document.addEventListener('DOMContentLoaded', () => {
         submitLoginBtn.textContent = 'लॉगिन हो रहा है...';
         
         if (await isValidCredentials(dealerCode, pin)) {
-          // Login successful
-          localStorage.setItem('isLoggedIn', 'true');
-          // Store the current dealer code for auto-lock
-          localStorage.setItem('current-dealer', dealerCode);
-          loginModal.style.display = 'none';
-          toggleLock(false);
-          alert('लॉगिन सफल!');
+          const dealerData = await getDealerData(dealerCode);
+
+          if (dealerData) {
+            // Check if the user is blocked
+            if (dealerData.blocked) {
+              alert('Your ID is blocked, Please Contact Admin');
+              submitLoginBtn.disabled = false;
+              submitLoginBtn.textContent = 'लॉगिन करें';
+              return;
+            }
+
+            // Check if the plan has expired
+            const validTillDate = new Date(dealerData.validTill);
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0); // Normalize current date to compare only date part
+
+            if (validTillDate < currentDate) {
+              alert('Dear User, Your Plan has been expired, for renew Please contact Admin');
+              submitLoginBtn.disabled = false;
+              submitLoginBtn.textContent = 'लॉगिन करें';
+              return;
+            }
+
+            // Login successful
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('current-dealer', dealerCode);
+            loginModal.style.display = 'none';
+            toggleLock(false);
+
+            alert(`लॉगिन सफल, प्रिय ${dealerData.dealerName || 'डीलर'} (कोड: ${dealerData.dealerCode}), आपका आईडी "${dealerData.package}" पैकेज का है और यह "${dealerData.validTill}" तक वैध है।`);
+          } else {
+            alert('लॉगिन सफल! डीलर डेटा प्राप्त करने में असमर्थ।');
+          }
         } else {
           alert('गलत डीलर कोड या PIN!');
           loginPin.value = '';
@@ -2503,12 +2848,14 @@ function toggleLock(isLocked) {
   const logoutBtn = el('logoutBtn');
   if (loginBtn) loginBtn.style.display = isLocked ? 'inline-block' : 'none';
   if (logoutBtn) logoutBtn.style.display = isLocked ? 'none' : 'inline-block';
+  const registerBtn = el('registerBtn');
+  if (registerBtn) registerBtn.style.display = isLocked ? 'inline-block' : 'none';
   
   const navbar = document.querySelector('.navbar');
   if(navbar) navbar.style.opacity = isLocked ? '0.6' : '1';
   
   // Don't disable pointer events for the entire navbar, just disable interactive elements except login button
-  const navbarItems = navbar.querySelectorAll('.nav-item:not(#loginBtn)');
+  const navbarItems = navbar.querySelectorAll('.nav-item:not(#loginBtn):not(#registerBtn)');
   navbarItems.forEach(item => {
     if(isLocked) {
       item.style.pointerEvents = 'none';
@@ -3261,6 +3608,299 @@ function exportToCSV(){if(filteredData.length===0){alert('No data to export');re
  
 toggleLock(true);
 showAbout();
+</script>
+    <script>
+        // Function to show the registration modal
+        function showRegistrationModal() {
+    const modal = document.getElementById('registrationModal');
+    modal.style.display = 'flex';
+    // Force reflow to ensure transition plays
+    modal.offsetWidth; 
+    modal.classList.add('active');
+}
+
+        // Function to hide the registration modal
+        function hideRegistrationModal() {
+    const modal = document.getElementById('registrationModal');
+    modal.classList.remove('active');
+    modal.addEventListener('transitionend', function handler() {
+        modal.style.display = 'none';
+        modal.removeEventListener('transitionend', handler);
+    });
+    document.getElementById('registrationError').textContent = ''; // Clear any previous errors
+         }
+ 
+         // Close modal when clicking outside of it
+         window.addEventListener('click', function(event) {
+             const registrationModal = document.getElementById('registrationModal');
+             if (event.target === registrationModal) {
+                 hideRegistrationModal();
+             }
+         });
+ 
+         // Close login modal when clicking outside of it
+         window.addEventListener('click', function(event) {
+             const loginModal = document.getElementById('loginModal');
+             if (loginModal && event.target === loginModal && loginModal.style.display === 'flex') {
+                 loginModal.style.display = 'none';
+             }
+         });
+
+        // Function to show the feedback modal
+        function showFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            modal.style.display = 'flex';
+            // Force reflow to ensure transition plays
+            modal.offsetWidth; 
+            modal.classList.add('active');
+        }
+
+        // Function to hide the feedback modal
+        function hideFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            modal.classList.remove('active');
+            modal.addEventListener('transitionend', function handler() {
+                modal.style.display = 'none';
+                modal.removeEventListener('transitionend', handler);
+            });
+            document.getElementById('feedbackError').textContent = ''; // Clear any previous errors
+        }
+
+        // Close feedback modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            const feedbackModal = document.getElementById('feedbackModal');
+            if (event.target === feedbackModal) {
+                hideFeedbackModal();
+            }
+        });
+ 
+         // Handle registration form submission
+        async function registerUser() {
+            const regPackage = document.getElementById('regPackage').value;
+            const dealerCode = document.getElementById('regDealerCode').value;
+            const dealerName = document.getElementById('regDealerName').value;
+            const mobileNumber = document.getElementById('regMobileNumber').value;
+            const email = document.getElementById('regEmail').value;
+            const pin = document.getElementById('regPin').value;
+            const confirmPin = document.getElementById('regConfirmPin').value;
+            const regUtrNumber = document.getElementById('regUtrNumber').value;
+            const regPaymentDate = document.getElementById('regPaymentDate').value;
+            const registrationError = document.getElementById('registrationError');
+
+            registrationError.textContent = ''; // Clear previous errors
+
+            // Basic validation
+            if (!regPackage || !dealerCode || !dealerName || !mobileNumber || !email || !pin || !confirmPin || (regPackage !== 'demo' && (!regUtrNumber || !regPaymentDate))) {
+                registrationError.textContent = 'कृपया सभी फ़ील्ड भरें।';
+                return;
+            }
+
+            if (dealerCode.length !== 8 || !/^\d{8}$/.test(dealerCode)) {
+                registrationError.textContent = 'डीलर कोड 8 अंकों का होना चाहिए।';
+                return;
+            }
+
+            if (mobileNumber.length !== 10 || !/^\d{10}$/.test(mobileNumber)) {
+                registrationError.textContent = 'मोबाइल नंबर 10 अंकों का होना चाहिए।';
+                return;
+            }
+
+            // Email validation
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                registrationError.textContent = 'कृपया एक वैध ईमेल आईडी दर्ज करें।';
+                return;
+            }
+
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                registrationError.textContent = 'पिन 4 अंकों का होना चाहिए।';
+                return;
+            }
+
+            if (pin !== confirmPin) {
+                registrationError.textContent = 'पिन और पुष्टि पिन मेल नहीं खाते।';
+                return;
+            }
+
+            showLoadingOverlay('पंजीकरण अनुरोध जमा किया जा रहा है...');
+
+            try {
+                if (db) {
+                    // Calculate validTill based on package and regPaymentDate
+                    let calculatedValidTill;
+                    if (regPackage === 'demo') {
+                        const today = new Date();
+                        calculatedValidTill = new Date(today);
+                        calculatedValidTill.setDate(today.getDate() + 1); // 1 day for demo
+                    } else if (regPaymentDate) {
+                        const paymentDate = new Date(regPaymentDate);
+                        calculatedValidTill = new Date(paymentDate);
+
+                        switch (regPackage) {
+                            case 'basic':
+                                calculatedValidTill.setDate(paymentDate.getDate() + 7); // 7 days for basic
+                                break;
+                            case 'premium':
+                                calculatedValidTill.setMonth(paymentDate.getMonth() + 1); // 1 month for premium
+                                break;
+                            case 'enterprise':
+                                calculatedValidTill.setFullYear(paymentDate.getFullYear() + 1); // 1 year for enterprise
+                                break;
+                            default:
+                                calculatedValidTill = null; // Or handle as an error
+                        }
+                    }
+
+                    await db.collection('registration-requests').add({
+                        package: regPackage,
+                        dealerCode,
+                        dealerName,
+                        mobileNumber,
+                        email,
+                        pin,
+                        regUtrNumber,
+                        regPaymentDate,
+                        validTill: calculatedValidTill ? calculatedValidTill.toISOString().split('T')[0] : 'N/A', // Store calculated validTill
+                        status: 'pending',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert('पंजीकरण सफल! आपका अनुरोध विचाराधीन है।');
+
+
+                } else {
+                    // Fallback for localStorage
+                    alert('पंजीकरण सफल! आपका अनुरोध विचाराधीन है। (Firebase उपलब्ध नहीं है, डेटा सहेजा नहीं गया)');
+                }
+                hideRegistrationModal();
+            } catch (error) {
+                console.error('Registration error:', error);
+                registrationError.textContent = 'पंजीकरण में त्रुटि हुई: ' + error.message;
+                alert('पंजीकरण में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
+        // Function to submit feedback
+        async function submitFeedback() {
+            const feedbackText = document.getElementById('feedbackText').value.trim();
+            const feedbackError = document.getElementById('feedbackError');
+            feedbackError.textContent = ''; // Clear previous errors
+
+            if (!feedbackText) {
+                feedbackError.textContent = 'कृपया अपनी प्रतिक्रिया दर्ज करें।';
+                return;
+            }
+
+            if (!firebase || !db || !auth) {
+                feedbackError.textContent = 'Firebase उपलब्ध नहीं है। कृपया बाद में पुनः प्रयास करें।';
+                console.error('Firebase, Firestore, or Auth not initialized.');
+                return;
+            }
+
+            try {
+                showLoadingOverlay('फीडबैक सबमिट कर रहा है...');
+                const user = auth.currentUser;
+                let userId = 'anonymous';
+                let userEmail = 'anonymous';
+
+                if (user) {
+                    userId = user.uid;
+                    userEmail = user.email || 'N/A';
+                } else {
+                    // If user is not logged in, check localStorage for current-dealer
+                    const currentDealer = localStorage.getItem('current-dealer');
+                    if (currentDealer) {
+                        userId = currentDealer; // Use dealer code as identifier if logged in via dealer code
+                        userEmail = currentDealer + '@dealer.com'; // Placeholder email
+                    }
+                }
+
+                await db.collection('feedback').add({
+                    userId: userId,
+                    userEmail: userEmail,
+                    feedback: feedbackText,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    isRead: false // Add isRead field with default false
+                });
+
+                alert('आपकी प्रतिक्रिया सफलतापूर्वक सबमिट कर दी गई है। धन्यवाद!');
+                document.getElementById('feedbackText').value = ''; // Clear the textarea
+                hideFeedbackModal();
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                feedbackError.textContent = 'फीडबैक सबमिट करने में त्रुटि हुई: ' + error.message;
+                alert('फीडबैक सबमिट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+            } finally {
+                hideLoadingOverlay();
+            }
+        }
+
+        // Attach event listeners to the register button
+        document.addEventListener('DOMContentLoaded', () => {
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) {
+                registerBtn.addEventListener('click', showRegistrationModal);
+            }
+        });
+    </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const regPackageSelect = document.getElementById('regPackage');
+    const regDealerCodeInput = document.getElementById('regDealerCode');
+    const regPinInput = document.getElementById('regPin');
+    const regConfirmPinInput = document.getElementById('regConfirmPin');
+    const registrationError = document.getElementById('registrationError');
+
+    // Check for expired demo usage on page load
+    const demoUsedDate = localStorage.getItem('demoUsedDate');
+    const storedDemoDealerCode = localStorage.getItem('demoDealerCode');
+    const storedDemoPin = localStorage.getItem('demoPin');
+
+    if (demoUsedDate && storedDemoDealerCode && storedDemoPin) {
+      const today = new Date();
+      const usedDate = new Date(demoUsedDate);
+      const oneDay = 24 * 60 * 60 * 1000; // milliseconds in one day
+
+      // If more than one day has passed since demo usage
+      if ((today.getTime() - usedDate.getTime()) > oneDay) {
+        localStorage.removeItem('demoUsedDate');
+        localStorage.removeItem('demoDealerCode');
+        localStorage.removeItem('demoPin');
+        // Optionally, inform the user that their demo has expired
+        // registrationError.textContent = 'आपका डेमो पैकेज समाप्त हो गया है।';
+        // console.log('Demo package expired and removed from localStorage.');
+      } else {
+        // If demo is still active, pre-fill and make read-only
+        // This assumes the user might try to register again with demo on the same day
+        // Or if they navigate away and come back
+        if (regPackageSelect) {
+          const demoOption = regPackageSelect.querySelector('option[value="demo"]');
+          if (demoOption) {
+            // If the demo option is selected, or if we want to force it
+            // For now, just ensure the fields are read-only if demo is selected
+            if (regPackageSelect.value === 'demo') {
+              regDealerCodeInput.value = storedDemoDealerCode;
+              regPinInput.value = storedDemoPin;
+              regConfirmPinInput.value = storedDemoPin;
+              regDealerCodeInput.readOnly = true;
+              regPinInput.readOnly = true;
+              regConfirmPinInput.readOnly = true;
+
+
+            // Hide UTR and Payment Date fields for demo
+            document.getElementById('regUtrNumber').style.display = 'none';
+            document.getElementById('regPaymentDate').style.display = 'none';
+            }
+          }
+        }
+      }
+    }
+
+    if (regPackageSelect && regDealerCodeInput && regPinInput && regConfirmPinInput) {
+
+    }
+  });
 </script>
 </body>
 </html>
