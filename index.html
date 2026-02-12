@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -89,7 +89,7 @@
                     experimentalForceLongPolling: true, // Use long polling instead of WebSockets
                     cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
                 }, { merge: true });
-                console.log("Firebase initialized successfully!");
+                console.log("Firebase initialized successfully! db object:", db);
                 // Fetch and display UPI ID after Firebase is initialized
                 fetchUpiIdAndDisplay();
             }
@@ -101,22 +101,47 @@
 
     // Function to fetch UPI ID from Firestore and display it
     async function fetchUpiIdAndDisplay() {
+        console.log("fetchUpiIdAndDisplay called.");
         try {
             if (db) {
+                console.log("db object is available in fetchUpiIdAndDisplay.");
                 const docRef = db.collection('settings').doc('appConfig');
                 const doc = await docRef.get();
                 if (doc.exists) {
                     const data = doc.data();
+                    console.log("Fetched appConfig data:", data);
                     if (data && data.upiId) {
                         firebaseConfig.upiId = data.upiId; // Update firebaseConfig with fetched UPI ID
                         const upiIdElement = document.getElementById('displayUpiId');
+                        const upgradeUpiIdElement = document.getElementById('upgradeDisplayUpiId');
+
                         if (upiIdElement) {
                             upiIdElement.textContent = `UPI ID for Payment: ${data.upiId}`;
+                            upiIdElement.style.color = 'red';
+                            upiIdElement.style.fontWeight = 'bold';
+                            upiIdElement.style.display = 'block';
+                            console.log("UPI ID displayed in main section:", data.upiId);
+                        } else {
+                            console.warn("displayUpiId element not found in DOM.");
                         }
+
+                        if (upgradeUpiIdElement) {
+                            upgradeUpiIdElement.textContent = `UPI ID for Payment: ${data.upiId}`;
+                            upgradeUpiIdElement.style.color = 'red';
+                            upgradeUpiIdElement.style.fontWeight = 'bold';
+                            upgradeUpiIdElement.style.display = 'block';
+                            console.log("UPI ID displayed in upgrade section:", data.upiId);
+                        } else {
+                            console.warn("upgradeDisplayUpiId element not found in DOM.");
+                        }
+                    } else {
+                        console.log("appConfig document exists, but no upiId field found.");
                     }
                 } else {
                     console.log("No appConfig document found in Firestore.");
                 }
+            } else {
+                console.warn("db object is NOT available in fetchUpiIdAndDisplay.");
             }
         } catch (error) {
             console.error("Error fetching UPI ID:", error);
@@ -1561,6 +1586,96 @@ function handleFirebaseError(error) {
  <div class="report-content" id="bookingSourceCompletion"></div>
  <div class="report-content" id="dataQualityReport"></div>
  <div class="report-content" id="trendAnalysisReport"></div>
+ <div class="active-report-container" id="upgradePlan" style="display:none">
+    <div class="report-header">
+        प्लान अपग्रेड करें
+        <span class="close-button" onclick="document.getElementById('upgradePlan').style.display = 'none';">&times;</span>
+    </div>
+    <div class="book-wrap">
+        <div class="book">
+            <h3>वर्तमान प्लान की स्थिति</h3>
+            <div class="book-section">
+                <div class="book-section-title">वैधता</div>
+                <div class="book-section-value" id="currentPlanValidity"></div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">स्थिति</div>
+                <div class="book-section-value" id="currentPlanStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="book-wrap" style="margin-top: 20px;">
+        <div class="book">
+            <h3>प्लान का चयन करें</h3>
+            <div class="book-section">
+                <div class="book-section-title">डीलर कोड (8-अंक)</div>
+                <div class="book-section-value">
+                    <input type="text" id="upgradeRegDealerCode" placeholder="डीलर कोड (8-अंक)" class="modal-input" maxlength="8" pattern="\d{8}" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">डीलर का नाम</div>
+                <div class="book-section-value">
+                    <input type="text" id="upgradeRegDealerName" placeholder="डीलर का नाम" class="modal-input" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">मोबाइल नंबर (10-अंक)</div>
+                <div class="book-section-value">
+                    <input type="tel" id="upgradeRegMobileNumber" placeholder="मोबाइल नंबर (10-अंक)" class="modal-input" maxlength="10" pattern="\d{10}" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">ईमेल आईडी</div>
+                <div class="book-section-value">
+                    <input type="email" id="upgradeRegEmail" placeholder="ईमेल आईडी" class="modal-input" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">पिन (4-अंक)</div>
+                <div class="book-section-value">
+                    <input type="password" id="upgradeRegPin" placeholder="पिन (4-अंक)" class="modal-input" maxlength="4" pattern="\d{4}" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">पिन की पुष्टि करें</div>
+                <div class="book-section-value">
+                    <input type="password" id="upgradeRegConfirmPin" placeholder="पिन की पुष्टि करें" class="modal-input" maxlength="4" pattern="\d{4}" required>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">पैकेज</div>
+                <div class="book-section-value">
+                    <select id="upgradeRegPackage" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;">
+                        <option value="demo">डेमो (7 दिन)</option>
+                        <option value="basic">बेसिक (1 महीना)</option>
+                        <option value="premium">प्रीमियम (6 महीने)</option>
+                        <option value="enterprise">एंटरप्राइज (1 साल)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">UPI ID</div>
+                <div class="book-section-value" id="upgradeDisplayUpiId"></div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">UTR नंबर</div>
+                <div class="book-section-value">
+                    <input type="text" id="upgradeRegUtrNumber" placeholder="UTR नंबर दर्ज करें" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;">
+                </div>
+            </div>
+            <div class="book-section">
+                <div class="book-section-title">भुगतान की तारीख</div>
+                <div class="book-section-value">
+                    <input type="date" id="upgradeRegPaymentDate" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:5px;">
+                </div>
+            </div>
+            <button id="renewPlanButton" style="width:100%; padding:10px; margin-top:15px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;">प्लान नवीनीकृत करें</button>
+            <button id="cancelUpgradeButton" style="width:100%; padding:10px; margin-top:10px; background:#f1f5f9; color:#475569; border:none; border-radius:5px; cursor:pointer;" onclick="document.getElementById('upgradePlan').style.display = 'none';">रद्द करें</button>
+        </div>
+    </div>
+</div>
  <div class="toparea-grid report-content" id="topAreas"></div>
 </div>
 <div class="active-report-container" id="aboutContainer" style="display:none">
@@ -1726,7 +1841,48 @@ function handleFirebaseError(error) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-function openTab(id,btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='block';el('consumerDataContainer').style.display='block';const c=el(id);c.style.display=c.classList.contains('toparea-grid')?'flex':'block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const t=reportTitles[id]||'';const rh=el('reportHeader');if(rh)rh.textContent=t}
+async function openTab(id,btn){
+    document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';
+    el('requestContainer').style.display='none';
+    el('reportContainer').style.display='block';
+    el('consumerDataContainer').style.display='block';
+    const c=el(id);
+    c.style.display=c.classList.contains('toparea-grid')?'flex':'block';
+    if(btn) btn.classList.add('active'); // Check if btn exists before adding class
+    const sm=el('reportsSubmenu');if(sm)sm.style.display='none';
+    const t=reportTitles[id]||'';
+    const rh=el('reportHeader');if(rh)rh.textContent=t;
+
+    if (id === 'upgradePlan') {
+        const dealerCode = localStorage.getItem('current-dealer');
+        if (dealerCode) {
+            try {
+                const snapshot = await db.collection('book-view-credentials').where('dealerCode', '==', dealerCode).get();
+                if (!snapshot.empty) {
+                    const userData = snapshot.docs[0].data();
+                    el('upgradeRegDealerCode').value = userData.dealerCode || '';
+                    el('upgradeRegDealerName').value = userData.dealerName || '';
+                    el('upgradeRegEmail').value = userData.email || '';
+
+                    el('upgradeRegDealerCode').readOnly = true;
+                    el('upgradeRegDealerName').readOnly = true;
+                    el('upgradeRegEmail').readOnly = true;
+
+                    // Ensure UTR and Payment Date fields are visible and editable
+                    el('upgradeRegUtrNumber').style.display = 'block';
+                    el('upgradeRegUtrNumber').removeAttribute('readOnly');
+                    el('upgradeRegPaymentDate').style.display = 'block';
+                    el('upgradeRegPaymentDate').removeAttribute('readOnly');
+                }
+            } catch (error) {
+                console.error('Error fetching user data for upgrade plan:', error);
+                showToast('Error loading user details for upgrade. Please try again.', 'error');
+            }
+        }
+    }
+}
 function showConsumerData(btn){document.querySelectorAll('.report-content').forEach(d=>d.style.display='none');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='block';btn.classList.add('active');const sm=el('reportsSubmenu');if(sm)sm.style.display='none';const rh=el('reportHeader');if(rh)rh.textContent='';if(filteredData.length===0||filteredData.length===data.length){applyAll();}}
 function toggleReports(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('requestContainer').style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display=(sm.style.display==='none'||sm.style.display==='')?'block':'none'}
 function showRequest(btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const ac=document.getElementById('aboutContainer');if(ac)ac.style.display='none';el('reportContainer').style.display='none';el('consumerDataContainer').style.display='none';const sm=el('reportsSubmenu');if(sm)sm.style.display='none';el('requestContainer').style.display='block'}
@@ -2830,7 +2986,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDate.setHours(0, 0, 0, 0); // Normalize current date to compare only date part
 
             if (validTillDate < currentDate) {
-              showToast('Dear User, Your Plan has been expired, for renew Please contact Admin', 'error');
+              showToast("⚠️ आपका प्लान समाप्त हो चुका है। कृपया अपग्रेड करें।", "warning");
+              document.body.classList.add("locked");
+              openUpgradePlan();
+              loginModal.style.display = 'none'; // Close login modal here
               submitLoginBtn.disabled = false;
               submitLoginBtn.textContent = 'लॉगिन करें';
               return;
@@ -2991,6 +3150,136 @@ function resetFilters(){
  customFilter=null;
  applyAll();
 }
+
+async function openUpgradePlan() {
+    console.log("openUpgradePlan called.");
+    // Sab reports hide
+    document.querySelectorAll(".report-content").forEach(el => {
+        el.classList.remove("active");
+        el.style.display = "none";
+    });
+
+    const upgradeSection = document.getElementById("upgradePlan");
+    upgradeSection.style.display = "block";
+    upgradeSection.classList.add("active");
+
+    document.getElementById("reportContainer").style.display = "block";
+
+    // Auto-fill user details for upgrade plan
+    try {
+        const user = auth.currentUser;
+        if (user) {
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                el('upgradeRegDealerCode').value = userData.dealerCode || '';
+                el('upgradeRegDealerName').value = userData.dealerName || '';
+                el('upgradeRegEmail').value = userData.email || '';
+                el('upgradeRegPackage').value = userData.package || '';
+                el('upgradeRegMobileNumber').value = userData.mobileNumber || '';
+                el('upgradeRegPin').value = userData.pin || '';
+            }
+        }
+    } catch (error) {
+        console.error('Error auto-filling upgrade plan details:', error);
+        showToast('उपयोगकर्ता विवरण ऑटो-फिल करने में विफल।', 'error');
+    }
+    fetchUpiIdAndDisplay(); // Call to display UPI ID
+}
+
+// Function to handle upgrade plan submission
+async function submitUpgradeRequest() {
+    console.log('submitUpgradeRequest function called.');
+    const dealerCode = el('upgradeRegDealerCode').value;
+    console.log('Dealer Code:', dealerCode);
+    const dealerName = el('upgradeRegDealerName').value;
+    console.log('Dealer Name:', dealerName);
+    const mobileNumber = el('upgradeRegMobileNumber').value;
+    console.log('Mobile Number:', mobileNumber);
+    const email = el('upgradeRegEmail').value;
+    console.log('Email:', email);
+    const pkg = el('upgradeRegPackage').value;
+    console.log('Package:', pkg);
+    const pin = el('upgradeRegPin').value;
+    console.log('Pin:', pin);
+    const confirmPin = el('upgradeRegConfirmPin').value;
+    console.log('Confirm Pin:', confirmPin);
+    const utrNumber = el('upgradeRegUtrNumber').value;
+    console.log('UTR Number:', utrNumber);
+    const paymentDate = el('upgradeRegPaymentDate').value;
+    console.log('Payment Date:', paymentDate);
+
+    if (!dealerCode || !dealerName || !mobileNumber || !email || !pkg || !pin || !confirmPin) {
+        showToast('कृपया अपग्रेड के लिए सभी आवश्यक फ़ील्ड भरें।', 'error');
+        return;
+    }
+
+    // Only check UTR and Payment Date if package is not 'demo'
+    if (pkg !== 'demo') {
+        if (!utrNumber || !paymentDate) {
+            showToast('कृपया अपग्रेड के लिए सभी आवश्यक फ़ील्ड भरें।', 'error');
+            return;
+        }
+    }
+
+    if (dealerCode.length !== 8 || !/^\d{8}$/.test(dealerCode)) {
+        showToast('डीलर कोड 8 अंकों का होना चाहिए।', 'error');
+        return;
+    }
+
+    if (mobileNumber.length !== 10 || !/^\d{10}$/.test(mobileNumber)) {
+        showToast('मोबाइल नंबर 10 अंकों का होना चाहिए।', 'error');
+        return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+        showToast('कृपया एक वैध ईमेल आईडी दर्ज करें।', 'error');
+        return;
+    }
+
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        showToast('पिन 4 अंकों का होना चाहिए।', 'error');
+        return;
+    }
+
+    if (pin !== confirmPin) {
+        showToast('पिन और पुष्टि पिन मेल नहीं खाते।', 'error');
+        return;
+    }
+
+    try {
+        await db.collection('upgradeRequests').add({
+            dealerCode,
+            dealerName,
+            mobileNumber,
+            email,
+            package: pkg,
+            pin,
+            utrNumber,
+            paymentDate,
+            requestDate: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending' // Initial status
+        });
+        showToast('आपका अपग्रेड अनुरोध सफलतापूर्वक सबमिट कर दिया गया है।', 'success');
+        // Optionally clear form or redirect
+        el('upgradeRegUtrNumber').value = '';
+        el('upgradeRegPaymentDate').value = '';
+        el('upgradeRegPin').value = '';
+        el('upgradeRegConfirmPin').value = '';
+    } catch (error) {
+        console.error('Error submitting upgrade request:', error);
+        showToast('अपग्रेड अनुरोध सबमिट करने में विफल। कृपया पुनः प्रयास करें।', 'error');
+    }
+}
+
+// Add event listener for the renewPlanButton
+document.addEventListener('DOMContentLoaded', () => {
+    const renewPlanButton = el('renewPlanButton');
+    if (renewPlanButton) {
+        renewPlanButton.addEventListener('click', submitUpgradeRequest);
+    }
+});
 
 function renderPage(){const t=Math.ceil(filteredData.length/pageSize)||1;totalPagesSpan.textContent=t;pageInput.value=currentPage;el('recordCount').textContent=filteredData.length;renderTable(filteredData.slice((currentPage-1)*pageSize,currentPage*pageSize))}
 prevPage.onclick=()=>{if(currentPage>1){currentPage--;renderPage()}};
